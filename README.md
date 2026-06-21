@@ -4,6 +4,9 @@
 
 [![License: LGPL-3.0](https://img.shields.io/badge/license-LGPL--3.0-blue.svg)](LICENSE)
 [![Build](https://github.com/ffmpegkit-maintained/ffmpeg-kit/actions/workflows/build.yml/badge.svg)](https://github.com/ffmpegkit-maintained/ffmpeg-kit/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/ffmpegkit-maintained/ffmpeg-kit?label=release)](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases)
+[![NDK](https://img.shields.io/badge/NDK-r26c-success.svg)](docs/BUILD.md)
+[![minSdk](https://img.shields.io/badge/minSdk-24-success.svg)](#compatibility)
 [![Maven Central](https://img.shields.io/badge/maven--central-coming%20soon-orange.svg)](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases)
 
 ## Why this fork exists
@@ -28,28 +31,15 @@ This fork is **Android-only, intentionally**. Maintaining a single platform well
 
 **Out of scope, intentionally:** iOS, macOS, tvOS, Linux, Flutter and React Native bindings. Upstream FFmpegKit's source for these platforms (`apple.sh`, `ios.sh`, `macos.sh`, `tvos.sh`, `linux.sh` and their respective directories) is not imported into this fork. If you need FFmpeg on those platforms, look for other actively maintained forks or projects targeting them specifically — this project won't take on that maintenance burden.
 
-## Installation
+## Quick start
 
-### Maven Central
+Maven Central publication is in progress (see below); until it lands, consume the prebuilt `.aar` directly. The same call sites you already use from upstream FFmpegKit work unchanged.
 
-Publication to Maven Central is in progress and not yet available. Track progress in [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases).
-
-```gradle
-// Coming soon
-dependencies {
-    implementation("io.github.ffmpegkit-maintained:ffmpeg-kit-full:<version>")
-}
-```
-
-### Local AAR (current method)
-
-Until Maven Central artifacts are published, consume the prebuilt `.aar` directly:
-
-1. Download the `.aar` for the variant you need from [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases).
-2. Place it in your app module, e.g. `app/libs/`.
-3. Reference it from your module's `build.gradle`:
+1. Download the `.aar` for the variant you need from [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) and drop it in `app/libs/`.
+2. Point Gradle at `libs/` and declare the dependency:
 
 ```gradle
+// app/build.gradle
 repositories {
     flatDir {
         dirs("libs")
@@ -62,6 +52,29 @@ dependencies {
     // Required runtime dependencies
     implementation("androidx.annotation:annotation:1.7.1")
     implementation("com.arthenica:smart-exception-java:0.2.1")
+}
+```
+
+3. Use it exactly like upstream FFmpegKit:
+
+```java
+FFmpegKit.executeAsync("-i input.mp4 -c:v mpeg4 output.mp4", session -> {
+    if (ReturnCode.isSuccess(session.getReturnCode())) {
+        // SUCCESS
+    }
+});
+```
+
+Migrating from `com.arthenica:ffmpeg-kit-*` on Maven Central? See [docs/MIGRATION.md](docs/MIGRATION.md).
+
+### Maven Central
+
+Publication to Maven Central is in progress and not yet available. Track progress in [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases).
+
+```gradle
+// Coming soon
+dependencies {
+    implementation("io.github.ffmpegkit-maintained:ffmpeg-kit-full:<version>")
 }
 ```
 
@@ -80,14 +93,30 @@ Pick the smallest variant that covers your codec/protocol needs to keep your app
 
 ## Compatibility
 
-- **Android SDK 35** (Android 15) as `compileSdk`/`targetSdk` — no deprecated API warnings.
-- **16 KB page size** support — native libraries are built/aligned for devices and emulators using 16 KB memory pages, a requirement for new and updated apps on Google Play.
-- Minimum supported API level matches upstream FFmpegKit (API 24+), see [docs/BUILD.md](docs/BUILD.md) for details on native toolchain versions.
+Current state of the `6.0-lts` release, as built from this repo today:
+
+| | Current |
+|---|---|
+| **NDK** | r26c (`26.2.11394342`) |
+| **minSdk** | 24 (Android 7.0) |
+| **compileSdk / targetSdk** | 33 (Android 13) |
+| **ABI** | `arm64-v8a` (prebuilt release); other ABIs buildable from source via `android.sh`, not published as releases |
+| **16 KB page size alignment** | Not yet verified/enforced in CI — see [docs/BUILD.md § Verify 16 KB page size alignment](docs/BUILD.md#8-verify-16-kb-page-size-alignment) for the manual check |
+
+Roadmap (announced direction for this fork, not yet shipped):
+
+- Bump `compileSdk`/`targetSdk` to **35** (Android 15) to clear deprecated-API warnings on current Google Play targeting requirements.
+- Verify and enforce **16 KB memory page size** alignment in CI, mandatory for new/updated Google Play apps since November 2025.
+
+Track progress on both in [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki).
 
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute
 - [docs/BUILD.md](docs/BUILD.md) — building the native libraries and AAR from source
+- [docs/MIGRATION.md](docs/MIGRATION.md) — moving from upstream `com.arthenica:ffmpeg-kit-*` (Maven Central) to this fork
+- [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) — what changed in this fork vs. upstream, release by release
+- [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki) — FAQ, troubleshooting, and deeper compatibility notes
 
 ## License
 

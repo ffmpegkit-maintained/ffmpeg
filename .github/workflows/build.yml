@@ -31,7 +31,7 @@ jobs:
       - name: Set up Android NDK
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r26d
+          ndk-version: r26c
 
       # Placeholder: native build pipeline is not wired up yet.
       # Once android.sh / Gradle modules land, replace this step with the
