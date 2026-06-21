@@ -43,7 +43,9 @@ jobs:
 
       - name: Install Android platform 35
         run: |
+          set +o pipefail
           yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          set -o pipefail
           "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
 
       - name: Set up Android NDK r26c
@@ -57,7 +59,7 @@ jobs:
 
       - name: Print build log
         if: always()
-        run: cat build.log
+        run: cat build.log || echo "no build.log produced (failed before the build step ran)"
 
       - name: Print ffbuild config log on failure
         if: failure()
