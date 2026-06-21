@@ -66,6 +66,29 @@ jobs:
         if: failure()
         run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
 
+      - name: Print toolchain env and per-library config logs on failure
+        if: failure()
+        run: |
+          echo "=== toolchain env ==="
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          echo "AR=$AR"
+          echo "AS=$AS"
+          echo "LD=$LD"
+          echo "STRIP=$STRIP"
+          echo "RANLIB=$RANLIB"
+          echo "CFLAGS=$CFLAGS"
+          echo "CXXFLAGS=$CXXFLAGS"
+          echo "LDFLAGS=$LDFLAGS"
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT"
+          echo
+          echo "=== config.log files under src/ (most recently modified first) ==="
+          while IFS= read -r log; do
+            echo "--- $log ---"
+            tail -150 "$log"
+            echo
+          done < <(find src -iname "config.log" -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2- | head -3)
+
       - name: Verify 16 KB page size alignment
         run: |
           set -e
