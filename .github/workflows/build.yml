@@ -79,8 +79,12 @@ jobs:
             src
           key: ffmpeg-kit-build-${{ hashFiles('android.sh', 'scripts/**') }}
 
+      # --full enables both gnutls and openssl, which FFmpeg's own configure
+      # refuses outright ("GnuTLS and OpenSSL must not be enabled at the same
+      # time."). Keep OpenSSL (Apache-2.0, no GPL-adjacent licensing
+      # questions) and drop GnuTLS.
       - name: Build full variant (arm64-v8a only)
-        run: ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+        run: ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
 
       - name: Print build log
         if: always()

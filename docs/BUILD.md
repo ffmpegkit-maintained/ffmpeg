@@ -78,12 +78,14 @@ git submodule update --init --recursive
 
 `android.sh` only has one variant preset: `--full` (every supported LGPL-compatible codec/library). There are no `--enable-audio` / `--enable-video` / `--enable-https` presets — those were upstream's historical Maven Central *artifact* names, not flags this script understands. The "Available variants" table in the README describes what upstream once shipped as separate artifacts; this fork currently only builds and publishes `full`.
 
+`--full` enables both `gnutls` and `openssl` for TLS, which FFmpeg's own `configure` refuses outright ("GnuTLS and OpenSSL must not be enabled at the same time."). Drop one with `--disable-lib-<name>` — the examples below keep OpenSSL (Apache-2.0, no GPL-adjacent licensing questions) and drop GnuTLS:
+
 ```bash
 # Full variant, all ABIs
-./android.sh --full --enable-android-media-codec --enable-android-zlib
+./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls
 
 # Full variant, arm64-v8a only (matches what CI builds and what's published)
-./android.sh --full --enable-android-media-codec --enable-android-zlib \
+./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls \
   --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
 ```
 
