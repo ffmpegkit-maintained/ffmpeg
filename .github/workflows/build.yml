@@ -39,7 +39,8 @@ jobs:
           sudo apt-get install -y \
             autoconf automake libtool pkg-config curl git \
             build-essential yasm nasm gperf texinfo bison ragel \
-            python3 python3-pip unzip zip wget meson ninja-build
+            python3 python3-pip unzip zip wget meson ninja-build \
+            doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
 
       - name: Install Android platform 35
         run: |
@@ -55,7 +56,7 @@ jobs:
           echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
       - name: Build full variant (arm64-v8a only)
-        run: ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-arm-v7a --disable-x86 --disable-x86-64
+        run: ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
 
       - name: Print build log
         if: always()
