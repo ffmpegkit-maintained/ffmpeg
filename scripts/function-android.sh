@@ -404,7 +404,14 @@ get_cxxflags() {
 }
 
 get_common_linked_libraries() {
-  local COMMON_LIBRARY_PATHS="-L${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/${HOST}/lib -L${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/sysroot/usr/lib/${HOST}/${API} -L${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/lib"
+  # NOTE: deliberately NOT including -L${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/lib
+  # here. That's the HOST toolchain's own lib dir (e.g. linux-x86_64/lib) - it
+  # ships the build machine's libc++abi.a, not a target-arch one. With NDK
+  # r26c it shadows the correct target libs during static-link probes (seen
+  # in libvpx's configure: "ld.lld: error: .../linux-x86_64/lib/libc++abi.a
+  # (...) is incompatible with aarch64linux"). The two paths below already
+  # cover everything needed for target (aarch64) linking.
+  local COMMON_LIBRARY_PATHS="-L${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/${HOST}/lib -L${ANDROID_NDK_ROOT}/toolchains/llvm/prebuilt/${TOOLCHAIN}/sysroot/usr/lib/${HOST}/${API}"
 
   case $1 in
   ffmpeg)
