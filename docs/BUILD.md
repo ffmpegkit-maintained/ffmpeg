@@ -28,8 +28,11 @@ sudo apt install -y \
   gperf texinfo bison ragel \
   python3 python3-pip \
   unzip zip wget \
-  meson ninja-build
+  meson ninja-build \
+  doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
 ```
+
+This is the full list needed for a `--full` build. `groff`, `doxygen`, `autogen`, `autopoint`, `gtk-doc-tools` and `libtasn1-bin` are easy to miss — without them, individual libraries fail deep into their own `configure`/`make` step (e.g. libiconv's man-page target fails with `groff: fatal error: cannot load 'DESC' description file` if `groff` is missing) rather than failing cleanly up front.
 
 ## 3. Install Android SDK + NDK
 
@@ -73,28 +76,26 @@ git submodule update --init --recursive
 
 ## 6. Build a variant
 
-Use the `android.sh` script with the flag matching the variant you need:
+`android.sh` only has one variant preset: `--full` (every supported LGPL-compatible codec/library). There are no `--enable-audio` / `--enable-video` / `--enable-https` presets — those were upstream's historical Maven Central *artifact* names, not flags this script understands. The "Available variants" table in the README describes what upstream once shipped as separate artifacts; this fork currently only builds and publishes `full`.
 
 ```bash
-# Full variant (all codecs/libraries)
-./android.sh --enable-full
+# Full variant, all ABIs
+./android.sh --full --enable-android-media-codec --enable-android-zlib
 
-# Audio-only variant
-./android.sh --enable-audio
-
-# Video variant
-./android.sh --enable-video
-
-# HTTPS-enabled minimal variant
-./android.sh --enable-https
+# Full variant, arm64-v8a only (matches what CI builds and what's published)
+./android.sh --full --enable-android-media-codec --enable-android-zlib \
+  --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
 ```
 
 Useful flags:
 
-- `--lts` — build against the older NDK/API baseline for maximum device compatibility.
+- `--lts` (or `-l`) — build against the older NDK/API baseline (API 16) for maximum device compatibility.
 - `-d` / `--debug` — keep debug symbols.
 - `-s` / `--speed` — optimize the build for speed over size.
-- `--arch=<arch>` — restrict the build to a single ABI (`arm-v7a`, `arm64-v8a`, `x86`, `x86-64`) instead of building all of them.
+- `--disable-<arch>` — drop one ABI from the build (`arm-v7a`, `arm-v7a-neon`, `arm64-v8a`, `x86`, `x86-64`). There's no single `--arch=` flag to keep just one — disable everything you don't want, as in the arm64-v8a-only example above. `--disable-arm-v7a` alone does **not** also drop `arm-v7a-neon`; that's a separate flag.
+- `--enable-gpl` — enables GPL-licensed codecs (x264/x265) when combined with `--enable-<library>`. Changes the resulting binary's license from LGPL-3.0 to GPL-3.0 — not done by `--full` alone.
+- `--api-level=<n>` — override the minimum API level for this build.
+- `--disable-lib-<library>` — drop one library from an otherwise-enabled set.
 
 Run `./android.sh --help` for the full list of options.
 
@@ -104,7 +105,7 @@ Successful builds produce per-ABI shared libraries under `prebuilt/android-<arch
 
 ## 8. Verify 16 KB page size alignment
 
-After building, confirm native libraries are aligned for 16 KB memory pages:
+The build already links with `-Wl,-z,max-page-size=16384` by default (`scripts/function-android.sh` and the generated `Application.mk`), so a normal build should come out aligned without any extra steps. This is a verification step, not something you need to enable — CI runs the same check and fails the build if it's ever wrong:
 
 ```bash
 for so in $(find prebuilt -name "*.so"); do
@@ -119,6 +120,9 @@ Segment alignment should report `2**14` (16384) or higher. See the [Android 16 K
 
 - **`autoreconf: command not found`** — install `autoconf`/`automake` (step 2).
 - **NDK toolchain not found** — double check `ANDROID_NDK_ROOT` points at the exact NDK version directory, not the parent `ndk/` folder.
+- **A library fails deep into its own `configure`/`make` step with no obvious cause** — almost always a missing apt dependency from step 2, not a real build bug. Check `build.log` for the actual command that failed; e.g. `groff: fatal error: cannot load 'DESC' description file` means `groff` is missing (libiconv's man-page target needs it even though you'll never read that man page).
+- **`CMake Error ... Compatibility with CMake < 3.5 has been removed`** — a pinned library version's `CMakeLists.txt` predates current CMake's policy floor. Already worked around for `cpu_features` (`-DCMAKE_POLICY_VERSION_MINIMUM=3.5` in `android_ndk_cmake()`); if a future library hits the same thing, add the same flag to its build script.
+- **`ld.lld: error: ... is incompatible with aarch64linux` during a library's own configure (not the final ffmpeg-kit link)** — a sign the host toolchain's own lib dir leaked into the link search path. Already fixed in `get_common_linked_libraries()`; if you see this again, check you haven't reintroduced `-L.../toolchains/llvm/prebuilt/<host>/lib` (the host-side path, distinct from `-L.../toolchains/llvm/prebuilt/<host>/<target-triple>/lib`, which is correct and needed).
 - **Build hangs on a sub-library `configure` step** — usually a missing dependency from step 2; check the relevant log under `<arch>/<library>.log` in the build directory for the actual `configure` error.
 - **Out of memory in WSL2** — increase the memory limit for WSL2 in `%UserProfile%\.wslconfig` (Windows side):
 
