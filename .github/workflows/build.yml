@@ -2,19 +2,24 @@ name: Build
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Android variants
-    runs-on: ubuntu-latest
+    # Only the "full" variant is wired up — android.sh has no audio/video/https
+    # presets (those are upstream's historical Maven Central artifact names, not
+    # build flags). Only arm64-v8a is built/published; see README § Compatibility.
+    #
+    # Triggered on version tags only (not every push/PR): this is a from-source
+    # FFmpeg build, easily 30-90+ minutes of compute — reserve it for actual
+    # releases. Use workflow_dispatch for an on-demand test run.
+    name: Build ffmpeg-kit (full, arm64-v8a)
+    runs-on: ubuntu-24.04
 
-    strategy:
-      matrix:
-        variant: [full, audio, video, https]
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
@@ -28,24 +33,56 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android NDK
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r26c
-
-      # Placeholder: native build pipeline is not wired up yet.
-      # Once android.sh / Gradle modules land, replace this step with the
-      # real build invocation, e.g.:
-      #   ./android.sh --enable-${{ matrix.variant }}
-      - name: Build (placeholder)
+      - name: Install build prerequisites
         run: |
-          echo "TODO: build ffmpeg-kit-${{ matrix.variant }} variant"
-          echo "See docs/BUILD.md for the manual build procedure."
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config curl git \
+            build-essential yasm nasm gperf texinfo bison ragel \
+            python3 python3-pip unzip zip wget meson ninja-build
 
-      # Placeholder: enable once the AAR is actually produced above.
-      - name: Upload artifact (placeholder)
-        if: false
+      - name: Install Android platform 35
+        run: |
+          yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+
+      - name: Set up Android NDK r26c
+        run: |
+          curl -s "https://dl.google.com/android/repository/android-ndk-r26c-linux.zip" -o ndk.zip
+          unzip -q -o ndk.zip -d "${HOME}/.ndk"
+          echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
+
+      - name: Build full variant (arm64-v8a only)
+        run: ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-arm-v7a --disable-x86 --disable-x86-64
+
+      - name: Print build log
+        if: always()
+        run: cat build.log
+
+      - name: Print ffbuild config log on failure
+        if: failure()
+        run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
+
+      - name: Verify 16 KB page size alignment
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r so; do
+            min_exp=99
+            while IFS= read -r exp; do
+              [[ -z "$exp" ]] && continue
+              (( exp < min_exp )) && min_exp=$exp
+            done < <(objdump -p "$so" | grep -A1 LOAD | grep -oE 'align 2\*\*[0-9]+' | grep -oE '[0-9]+$')
+            echo "$so: align=2**${min_exp}"
+            if (( min_exp < 14 )); then
+              echo "::error file=${so}::not 16 KB aligned (got 2**${min_exp})"
+              fail=1
+            fi
+          done < <(find prebuilt -name "*.so")
+          exit "$fail"
+
+      - name: Upload AAR artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg-kit-${{ matrix.variant }}
-          path: prebuilt/**/*.aar
+          name: ffmpeg-kit-full-arm64-v8a
+          path: prebuilt/bundle-android-aar/ffmpeg-kit.aar

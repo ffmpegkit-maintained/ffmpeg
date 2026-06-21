@@ -93,22 +93,21 @@ Pick the smallest variant that covers your codec/protocol needs to keep your app
 
 ## Compatibility
 
-Current state of the `6.0-lts` release, as built from this repo today:
+State of the `main` branch source (and of any `.aar` produced by the CI build going forward):
 
 | | Current |
 |---|---|
 | **NDK** | r26c (`26.2.11394342`) |
 | **minSdk** | 24 (Android 7.0) |
-| **compileSdk / targetSdk** | 33 (Android 13) |
-| **ABI** | `arm64-v8a` (prebuilt release); other ABIs buildable from source via `android.sh`, not published as releases |
-| **16 KB page size alignment** | Not yet verified/enforced in CI — see [docs/BUILD.md § Verify 16 KB page size alignment](docs/BUILD.md#8-verify-16-kb-page-size-alignment) for the manual check |
+| **compileSdk / targetSdk** | 35 (Android 15) |
+| **ABI** | `arm64-v8a` only — CI builds and publishes this ABI exclusively; other ABIs are buildable from source via `android.sh` but not published |
+| **16 KB page size alignment** | Enforced — native libraries are linked with `-Wl,-z,max-page-size=16384`, and the CI build fails if any `.so` isn't 16 KB-aligned (see the "Verify 16 KB page size alignment" step in [.github/workflows/build.yml](.github/workflows/build.yml)) |
 
-Roadmap (announced direction for this fork, not yet shipped):
+> **Note:** the [`v6.0.0-lts-android`](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.0-lts-android) release currently on [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) was built **before** the compileSdk 35 bump and the 16 KB alignment fix — it's still compileSdk 33 and unaligned. Push a new `v*` tag to run the CI build ([.github/workflows/build.yml](.github/workflows/build.yml), tag-triggered) and cut a release that actually matches this table.
 
-- Bump `compileSdk`/`targetSdk` to **35** (Android 15) to clear deprecated-API warnings on current Google Play targeting requirements.
-- Verify and enforce **16 KB memory page size** alignment in CI, mandatory for new/updated Google Play apps since November 2025.
+CI builds only the `full` variant — `android.sh` has no `audio`/`video`/`https` build presets (those are upstream's historical Maven Central artifact names, not flags this script understands). The variant table above describes what upstream once shipped; only `full` is currently buildable/published from this fork.
 
-Track progress on both in [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki).
+See [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki) for history.
 
 ## Documentation
 

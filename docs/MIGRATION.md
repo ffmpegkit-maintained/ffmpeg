@@ -69,7 +69,7 @@ A clean rebuild matters here: if Gradle's dependency cache still has a resolved 
 
 - **ABI coverage**: only `arm64-v8a` is published as a prebuilt release here. If your app shipped `armeabi-v7a` or `x86_64` builds, those aren't available prebuilt — see [BUILD.md](BUILD.md) to compile them yourself with `android.sh --arch=<abi>`.
 - **minSdk**: 24, same floor as upstream's later releases — no change expected for most apps.
-- **compileSdk/targetSdk**: currently 33, not yet bumped to 35. If your app already targets 35, that's still fine (this is a *library* module's compileSdk, not a constraint on your app's), but see [README § Compatibility](../README.md#compatibility) for what's still in progress.
+- **compileSdk/targetSdk**: 35 in source as of the latest commit. The currently downloadable `v6.0.0-lts-android` release predates that bump and is still compileSdk 33 — see [README § Compatibility](../README.md#compatibility) for which one you're actually getting until a new tagged release is cut.
 - **No Maven Central yet**: until publication lands, you maintain the `.aar` file in your repo rather than pulling it as a remote dependency. Track an upgrade path in [PATCH-NOTES.md](PATCH-NOTES.md) once Maven Central support ships.
 
 ## Troubleshooting

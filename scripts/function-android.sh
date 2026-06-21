@@ -91,7 +91,7 @@ APP_PLATFORM := android-${API}
 
 APP_CFLAGS := -O3 -DANDROID ${LTS_BUILD_FLAG}${BUILD_DATE} -Wall -Wno-deprecated-declarations -Wno-pointer-sign -Wno-switch -Wno-unused-result -Wno-unused-variable
 
-APP_LDFLAGS := -Wl,--hash-style=both
+APP_LDFLAGS := -Wl,--hash-style=both -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384
 EOF
 }
 
@@ -482,7 +482,7 @@ get_ldflags() {
   fi
   local COMMON_LINKED_LIBS=$(get_common_linked_libraries "$1")
 
-  echo "${ARCH_FLAGS} ${OPTIMIZATION_FLAGS} ${COMMON_LINKED_LIBS} -Wl,--hash-style=both -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libunwind.a"
+  echo "${ARCH_FLAGS} ${OPTIMIZATION_FLAGS} ${COMMON_LINKED_LIBS} -Wl,--hash-style=both -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libunwind.a -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384"
 }
 
 create_mason_cross_file() {
