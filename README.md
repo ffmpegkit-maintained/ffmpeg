@@ -18,6 +18,16 @@ This fork exists to keep FFmpegKit alive for the Android ecosystem: same API sur
 
 We are not affiliated with the original author. All credit for the original design and years of work goes to the upstream project; this fork simply continues maintenance under the same license.
 
+## Scope
+
+This fork is **Android-only, intentionally**. Maintaining a single platform well is more valuable to this project's users than spreading effort thin across all the platforms upstream FFmpegKit supported. Focus areas are:
+
+- **Android SDK 35** (Android 15) compatibility, kept current as new SDK levels ship.
+- **16 KB memory page size** support, required by Google Play for new and updated apps.
+- **Long-term maintenance**: security patches, NDK/toolchain bumps, and FFmpeg/codec updates on an LTS-style cadence rather than chasing every upstream FFmpeg release.
+
+**Out of scope, intentionally:** iOS, macOS, tvOS, Linux, Flutter and React Native bindings. Upstream FFmpegKit's source for these platforms (`apple.sh`, `ios.sh`, `macos.sh`, `tvos.sh`, `linux.sh` and their respective directories) is not imported into this fork. If you need FFmpeg on those platforms, look for other actively maintained forks or projects targeting them specifically — this project won't take on that maintenance burden.
+
 ## Installation
 
 ### Maven Central
