@@ -227,10 +227,16 @@ get_common_cflags() {
     local LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
   fi
 
+  # NDK r24+ clang treats implicit function declarations as a hard error
+  # (ISO C99 default). Several pinned library versions (libaom, libvpx neon
+  # intrinsics) predate that and rely on it being a warning. Downgrade it
+  # rather than patching each library's neon sources individually.
+  local STRICT_C99_COMPAT_FLAG="-Wno-error=implicit-function-declaration"
+
   if [[ $(compare_versions "$DETECTED_NDK_VERSION" "23") -ge 0 ]]; then
-    echo "-fstrict-aliasing -DANDROID_NDK -fPIC -DANDROID ${LTS_BUILD_FLAG}-D__ANDROID__ -D__ANDROID_MIN_SDK_VERSION__=${API}"
+    echo "-fstrict-aliasing -DANDROID_NDK -fPIC -DANDROID ${LTS_BUILD_FLAG}-D__ANDROID__ -D__ANDROID_MIN_SDK_VERSION__=${API} ${STRICT_C99_COMPAT_FLAG}"
   else
-    echo "-fno-integrated-as -fstrict-aliasing -DANDROID_NDK -fPIC -DANDROID ${LTS_BUILD_FLAG}-D__ANDROID__ -D__ANDROID_API__=${API}"
+    echo "-fno-integrated-as -fstrict-aliasing -DANDROID_NDK -fPIC -DANDROID ${LTS_BUILD_FLAG}-D__ANDROID__ -D__ANDROID_API__=${API} ${STRICT_C99_COMPAT_FLAG}"
   fi
 }
 
