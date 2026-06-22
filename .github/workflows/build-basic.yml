@@ -21,8 +21,6 @@ jobs:
     name: Build ffmpeg-kit (basic, arm64-v8a)
     runs-on: ubuntu-24.04
     timeout-minutes: 180
-    permissions:
-      contents: write
 
     defaults:
       run:
@@ -83,16 +81,23 @@ jobs:
             src
           key: ffmpeg-kit-build-basic-${{ hashFiles('android.sh', 'scripts/**') }}
 
-      - name: Restore latest build checkpoint from ci-cache-basic branch
+      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
+      # not a branch on this repo - this repo is public, and a branch here
+      # would publicly expose the finished paid-tier .aar with zero
+      # authentication needed. See the matching comment in build.yml.
+      - name: Restore latest build checkpoint from private cache repo
+        env:
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
-          if git ls-remote --exit-code --heads origin ci-cache-basic >/dev/null 2>&1; then
-            echo "Found ci-cache-basic branch, restoring prebuilt/ and src/ from it"
-            git fetch --depth=1 origin ci-cache-basic
+          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git"
+          if git ls-remote --exit-code --heads "$REMOTE" basic >/dev/null 2>&1; then
+            echo "Found basic branch in ci-cache-private, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 "$REMOTE" basic
             git archive FETCH_HEAD | tar -x
             echo "Restored:"
             find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
           else
-            echo "No ci-cache-basic branch yet - starting fresh"
+            echo "No basic branch yet in ci-cache-private - starting fresh"
           fi
 
       # Same GnuTLS/OpenSSL conflict as the other two tiers - --disable-lib-gnutls
@@ -100,7 +105,7 @@ jobs:
       # Basic-specific exclusions described at the top of this file.
       - name: Build basic variant (arm64-v8a only)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
           checkpoint() {
             flock /tmp/checkpoint.lock -c '
@@ -108,10 +113,10 @@ jobs:
               cp -r prebuilt "$tmp/" 2>/dev/null
               cp -r src "$tmp/" 2>/dev/null
               ( cd "$tmp" \
-                && git init -q -b ci-cache-basic \
+                && git init -q -b basic \
                 && git add -A \
                 && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-basic )
+                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git" HEAD:basic )
               rm -rf "$tmp"
             '
           }
@@ -190,8 +195,8 @@ jobs:
           done < <(find prebuilt -name "*.so")
           exit "$fail"
 
-      - name: Upload AAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ffmpeg-kit-basic-arm64-v8a
-          path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
+      # No actions/upload-artifact here on purpose - paid Gumroad tier,
+      # Actions artifacts on a public repo are downloadable by any signed-in
+      # GitHub user for free. The build step above already pushed the
+      # finished .aar to ci-cache-private's "basic" branch as its final
+      # checkpoint - fetch it from there instead.

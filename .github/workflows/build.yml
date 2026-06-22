@@ -24,12 +24,6 @@ jobs:
     # killed it (conclusion: cancelled, no error). Bound that here so a
     # repeat hang fails fast instead of burning a full day of turnaround.
     timeout-minutes: 180
-    # Needed to push incremental checkpoints to the ci-cache branch (see
-    # below) - actions/cache alone isn't enough, its save step is skipped
-    # entirely on a cancelled/timed-out job, which is exactly the failure
-    # mode we keep hitting.
-    permissions:
-      contents: write
 
     defaults:
       run:
@@ -100,16 +94,29 @@ jobs:
       # actions/cache's save step). Restores after the actions/cache step so
       # it can overlay anything more recent that a partial/killed run pushed
       # but never got to save through actions/cache's own post-step.
-      - name: Restore latest build checkpoint from ci-cache branch
+      #
+      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
+      # not a branch on this repo - this repo is public, and a branch here
+      # would publicly expose the finished paid-tier .aar with zero
+      # authentication needed (any `git clone --branch ci-cache ...` would
+      # get it). Learned this the hard way: the original same-repo ci-cache/
+      # ci-cache-basic/ci-cache-gpl branches did exactly that and were
+      # deleted once found. CI_CACHE_TOKEN is a fine-grained PAT scoped to
+      # just ci-cache-private (Contents: read/write), since GITHUB_TOKEN
+      # can't reach a different repo.
+      - name: Restore latest build checkpoint from private cache repo
+        env:
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
-          if git ls-remote --exit-code --heads origin ci-cache >/dev/null 2>&1; then
-            echo "Found ci-cache branch, restoring prebuilt/ and src/ from it"
-            git fetch --depth=1 origin ci-cache
+          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git"
+          if git ls-remote --exit-code --heads "$REMOTE" full >/dev/null 2>&1; then
+            echo "Found full branch in ci-cache-private, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 "$REMOTE" full
             git archive FETCH_HEAD | tar -x
             echo "Restored:"
             find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
           else
-            echo "No ci-cache branch yet - starting fresh"
+            echo "No full branch yet in ci-cache-private - starting fresh"
           fi
 
       # --full enables both gnutls and openssl, which FFmpeg's own configure
@@ -127,7 +134,7 @@ jobs:
       # still have to pass either way.
       - name: Build full variant (arm64-v8a only)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
           # flock prevents the background loop's checkpoint and the final
           # one (after kill+wait, which doesn't reliably block on an
@@ -139,10 +146,10 @@ jobs:
               cp -r prebuilt "$tmp/" 2>/dev/null
               cp -r src "$tmp/" 2>/dev/null
               ( cd "$tmp" \
-                && git init -q -b ci-cache \
+                && git init -q -b full \
                 && git add -A \
                 && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache )
+                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git" HEAD:full )
               rm -rf "$tmp"
             '
           }
@@ -215,13 +222,11 @@ jobs:
           done < <(find prebuilt -name "*.so")
           exit "$fail"
 
-      # android.sh writes to prebuilt/<aar-dir>/ffmpeg-kit/ffmpeg-kit.aar
-      # (FFMPEG_KIT_AAR="${BASEDIR}/prebuilt/$(get_aar_directory)/ffmpeg-kit"
-      # in android.sh) - an extra ffmpeg-kit/ subdirectory past what the
-      # path here previously assumed, which silently produced an empty
-      # artifact (if-no-files-found defaults to "warn", not failing the job).
-      - name: Upload AAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ffmpeg-kit-full-arm64-v8a
-          path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
+      # No actions/upload-artifact here on purpose: this is a paid Gumroad
+      # tier, and Actions artifacts on a public repo are downloadable by any
+      # signed-in GitHub user for free, not just collaborators - confirmed
+      # directly and fixed by deleting everything already exposed that way.
+      # The build step above already runs `checkpoint` one last time right
+      # before it exits (success or fail), which pushes the finished
+      # prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar to the
+      # private ci-cache-private repo's "full" branch - fetch it from there.
