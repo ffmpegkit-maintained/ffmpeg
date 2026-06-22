@@ -79,13 +79,23 @@ jobs:
           sed -i 's#make -j\$(get_cpu_count) || return 1#make V=1 -j1 || return 1#' scripts/android/harfbuzz.sh
           cat scripts/android/harfbuzz.sh
 
+      # --disable-lib-gnutls included deliberately: that flag is what
+      # actually triggers the infinite dependency-resolution loop bug
+      # (set_library "gnutls" 0 cascades set_virtual_library "libiconv" 0,
+      # wiping the enablement libass's own cascade had set, so libiconv
+      # never finishes and anything depending on it - including libass
+      # itself - loops forever printing "Skipping X" without ever timing
+      # out on its own). A healthy run finishes in ~10 min; 15 min timeout
+      # here so a still-broken fix fails fast instead of riding out the
+      # full 60-minute job timeout.
       - name: Build libass only (pulls freetype, fribidi, fontconfig, harfbuzz)
+        timeout-minutes: 15
         run: |
           touch build.log
           stdbuf -oL -eL tail -f build.log &
           TAIL_PID=$!
           set +e
-          stdbuf -oL -eL ./android.sh --enable-libass --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          stdbuf -oL -eL ./android.sh --enable-libass --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
           BUILD_EXIT=$?
           sleep 2
           kill "$TAIL_PID" 2>/dev/null || true

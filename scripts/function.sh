@@ -1377,6 +1377,17 @@ set_library() {
 # These libraries are supported by all platforms.
 #
 set_virtual_library() {
+  # Virtual libraries (libiconv, libuuid, zlib) are shared platform-capability
+  # flags that multiple unrelated libraries cascade-enable independently
+  # (e.g. gnutls, lame and libass all request libiconv). Disabling ONE
+  # consumer (e.g. --disable-lib-gnutls) must not cascade a 0 here and
+  # silently undo what another still-enabled consumer asked for - only
+  # cascade actual enables. The real per-library disable already happened
+  # on the caller's own ENABLED_LIBRARIES[...] entry before reaching here.
+  if [[ "$2" == "0" ]]; then
+    return 0
+  fi
+
   case $1 in
   libiconv)
     if [[ ${FFMPEG_KIT_BUILD_TYPE} == "ios" ]] || [[ ${FFMPEG_KIT_BUILD_TYPE} == "tvos" ]] || [[ ${FFMPEG_KIT_BUILD_TYPE} == "macos" ]] || [[ ${FFMPEG_KIT_BUILD_TYPE} == "apple" ]]; then
