@@ -86,7 +86,8 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 |---|---|---|---|---|
 | Distribution | Maven Central, free | Gumroad, $19 | Gumroad, $29 | Gumroad, $39 |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
-| Build workflow | *(planned)* | `build-basic.yml` | `build.yml` | `build-gpl.yml` |
+| Build workflow | `build-free.yml` | `build-basic.yml` | `build.yml` | `build-gpl.yml` |
+| Maven coordinates | `dev.ffmpegkit-maintained:ffmpeg-kit-free` | — (Gumroad file) | — (Gumroad file) | — (Gumroad file) |
 | Android `MediaCodec` (hardware accel) | ❌ | ✅ | ✅ | ✅ |
 | H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
 | H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `openh264` | ✅ via `x264` |
@@ -108,7 +109,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
-**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central — not yet published, build workflow not written yet.
+**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Build (`build-free.yml`) and publishing (`com.vanniktech.maven.publish` in `android/ffmpeg-kit-android-lib/build.gradle`, gated to `v*-free` tag pushes only) are wired up; first actual publish to Maven Central hasn't happened yet — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
