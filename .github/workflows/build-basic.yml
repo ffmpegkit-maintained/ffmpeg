@@ -1,24 +1,24 @@
-name: Build (Lite variant)
+name: Build (Basic variant)
 
-# The $19 tier: --full minus H.265 encoding (kvazaar - H.264 encode via
-# openh264 is KEPT, it's the single most common use case and dropping it
-# made the tier far less useful) and a few large, niche feature blocks:
-# OCR (tesseract+leptonica), subtitle/text rendering (libass, harfbuzz,
-# freetype, fontconfig, fribidi - also drops FFmpeg's drawtext filter,
-# which depends on freetype), SRT streaming, and chromaprint audio
-# fingerprinting. H.264/H.265 *decode* stays either way - that's native
-# FFmpeg, not tied to openh264/kvazaar at all. Still LGPL-3.0 - no GPL
-# codecs here, that's the separate build-gpl.yml tier. See README
+# The $19 tier (renamed from "Lite"): --full minus H.265 encoding (kvazaar -
+# H.264 encode via openh264 is KEPT, it's the single most common use case
+# and dropping it made the tier far less useful) and a few large, niche
+# feature blocks: OCR (tesseract+leptonica), subtitle/text rendering
+# (libass, harfbuzz, freetype, fontconfig, fribidi - also drops FFmpeg's
+# drawtext filter, which depends on freetype), SRT streaming, and
+# chromaprint audio fingerprinting. H.264/H.265 *decode* stays either way -
+# that's native FFmpeg, not tied to openh264/kvazaar at all. Still LGPL-3.0
+# - no GPL codecs here, that's the separate build-gpl.yml tier. See README
 # "Available tiers" for the full tier-by-tier breakdown shown to customers.
 
 on:
   push:
-    tags: ["v*-lite"]
+    tags: ["v*-basic"]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build ffmpeg-kit (lite, arm64-v8a)
+    name: Build ffmpeg-kit (basic, arm64-v8a)
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     permissions:
@@ -81,24 +81,24 @@ jobs:
           path: |
             prebuilt
             src
-          key: ffmpeg-kit-build-lite-${{ hashFiles('android.sh', 'scripts/**') }}
+          key: ffmpeg-kit-build-basic-${{ hashFiles('android.sh', 'scripts/**') }}
 
-      - name: Restore latest build checkpoint from ci-cache-lite branch
+      - name: Restore latest build checkpoint from ci-cache-basic branch
         run: |
-          if git ls-remote --exit-code --heads origin ci-cache-lite >/dev/null 2>&1; then
-            echo "Found ci-cache-lite branch, restoring prebuilt/ and src/ from it"
-            git fetch --depth=1 origin ci-cache-lite
+          if git ls-remote --exit-code --heads origin ci-cache-basic >/dev/null 2>&1; then
+            echo "Found ci-cache-basic branch, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 origin ci-cache-basic
             git archive FETCH_HEAD | tar -x
             echo "Restored:"
             find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
           else
-            echo "No ci-cache-lite branch yet - starting fresh"
+            echo "No ci-cache-basic branch yet - starting fresh"
           fi
 
       # Same GnuTLS/OpenSSL conflict as the other two tiers - --disable-lib-gnutls
       # for the same reason. The rest of the --disable-lib-* flags are the
-      # Lite-specific exclusions described at the top of this file.
-      - name: Build lite variant (arm64-v8a only)
+      # Basic-specific exclusions described at the top of this file.
+      - name: Build basic variant (arm64-v8a only)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -108,10 +108,10 @@ jobs:
               cp -r prebuilt "$tmp/" 2>/dev/null
               cp -r src "$tmp/" 2>/dev/null
               ( cd "$tmp" \
-                && git init -q -b ci-cache-lite \
+                && git init -q -b ci-cache-basic \
                 && git add -A \
                 && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-lite )
+                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-basic )
               rm -rf "$tmp"
             '
           }
@@ -192,5 +192,5 @@ jobs:
       - name: Upload AAR artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg-kit-lite-arm64-v8a
+          name: ffmpeg-kit-basic-arm64-v8a
           path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar

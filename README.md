@@ -80,34 +80,39 @@ dependencies {
 
 ## Available tiers
 
-Three separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All three are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them.
+Four separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All four are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them.
 
-| | **Lite** | **Full** | **GPL** |
-|---|---|---|---|
-| License | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
-| Build workflow | `build-lite.yml` | `build.yml` | `build-gpl.yml` |
-| H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
-| H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `x264` |
-| H.265/HEVC **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
-| H.265/HEVC **encode** | ❌ | ✅ via `kvazaar` | ✅ via `x265` |
-| AV1 | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` |
-| VP8/VP9 | ✅ `libvpx` | ✅ `libvpx` | ✅ `libvpx` |
-| Theora | ✅ `libtheora` | ✅ `libtheora` | ✅ `libtheora` |
-| Audio codecs (MP3, AMR, Opus, Speex, Vorbis, MP2) | ✅ | ✅ | ✅ |
-| Images (WebP, GIF, JPEG, PNG, TIFF) | ✅ | ✅ | ✅ |
-| Subtitle/text rendering (`libass`, `harfbuzz`, `freetype`, `fontconfig`, `fribidi`) — also covers FFmpeg's `drawtext` filter | ❌ | ✅ | ✅ |
-| OCR (`tesseract`, `leptonica`) | ❌ | ✅ | ✅ |
-| SRT (secure streaming) | ❌ | ✅ | ✅ |
-| Audio fingerprinting (`chromaprint`) | ❌ | ✅ | ✅ |
-| TLS | ✅ `openssl` | ✅ `openssl` | ✅ `openssl` |
-| `xvidcore`, `libvidstab`, `rubberband` | ❌ | ❌ | ✅ (GPL-licensed) |
-| `zimg`, `snappy`, `soxr`, `libxml2`, Android `MediaCodec`/`zlib` | ✅ | ✅ | ✅ |
+| | **Free** | **Basic** | **Full** | **Full GPL** |
+|---|---|---|---|---|
+| Distribution | Maven Central, free | Gumroad, $19 | Gumroad, $29 | Gumroad, $39 |
+| License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
+| Build workflow | *(planned)* | `build-basic.yml` | `build.yml` | `build-gpl.yml` |
+| Android `MediaCodec` (hardware accel) | ❌ | ✅ | ✅ | ✅ |
+| H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
+| H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `openh264` | ✅ via `x264` |
+| H.265/HEVC **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
+| H.265/HEVC **encode** | ❌ | ❌ | ✅ via `kvazaar` | ✅ via `x265` |
+| AV1 | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` |
+| VP8/VP9 | ✅ `libvpx` | ✅ `libvpx` | ✅ `libvpx` | ✅ `libvpx` |
+| Theora | ❌ | ✅ `libtheora` | ✅ `libtheora` | ✅ `libtheora` |
+| Audio codecs (Opus, Speex, Vorbis) | ✅ | ✅ | ✅ | ✅ |
+| Audio codecs (MP3, AMR, MP2) | ❌ | ✅ | ✅ | ✅ |
+| Images (WebP, GIF, JPEG, PNG, TIFF) | ❌ | ✅ | ✅ | ✅ |
+| Subtitle/text rendering (`libass`, `harfbuzz`, `freetype`, `fontconfig`, `fribidi`) — also covers FFmpeg's `drawtext` filter | ❌ | ❌ | ✅ | ✅ |
+| OCR (`tesseract`, `leptonica`) | ❌ | ❌ | ✅ | ✅ |
+| SRT (secure streaming) | ❌ | ❌ | ✅ | ✅ |
+| Audio fingerprinting (`chromaprint`) | ❌ | ❌ | ✅ | ✅ |
+| TLS | ❌ | ✅ `openssl` | ✅ `openssl` | ✅ `openssl` |
+| `xvidcore`, `libvidstab`, `rubberband` | ❌ | ❌ | ❌ | ✅ (GPL-licensed) |
+| `zimg`, `snappy`, `soxr`, `libxml2`, Android `zlib` | ❌ | ✅ | ✅ | ✅ |
 
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
+**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central — not yet published, build workflow not written yet.
+
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
-**⚠️ GPL tier license note:** `--enable-gpl` adds `x264`, `x265`, `xvidcore`, `libvidstab` and `rubberband`, which makes the resulting AAR **GPL-3.0 instead of LGPL-3.0**. Copyleft applies to your own app if you statically or dynamically link it — review what that means for your project's licensing before choosing this tier over Full. Kept as a fully separate artifact/workflow/cache so it never mixes with the LGPL builds.
+**⚠️ Full GPL tier license note:** `--enable-gpl` adds `x264`, `x265`, `xvidcore`, `libvidstab` and `rubberband`, which makes the resulting AAR **GPL-3.0 instead of LGPL-3.0**. Copyleft applies to your own app if you statically or dynamically link it — review what that means for your project's licensing before choosing this tier over Full. Kept as a fully separate artifact/workflow/cache so it never mixes with the LGPL builds.
 
 ## Compatibility
 
@@ -123,7 +128,7 @@ State of the `main` branch source (and of any `.aar` produced by the CI build go
 
 > **Note:** the [`v6.0.0-lts-android`](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.0-lts-android) release currently on [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) was built **before** the compileSdk 35 bump and the 16 KB alignment fix — it's still compileSdk 33 and unaligned. Push a new `v*` tag to run the CI build ([.github/workflows/build.yml](.github/workflows/build.yml), tag-triggered) and cut a release that actually matches this table.
 
-`android.sh` has no `audio`/`video`/`https` build presets (those were upstream's historical Maven Central artifact names, not flags this script understands) — this fork's three tiers (Lite/Full/GPL, see [README § Available tiers](#available-tiers)) are defined by which `--disable-lib-*`/`--enable-gpl` flags each of the three workflows passes, not by upstream's old variant names.
+`android.sh` has no `audio`/`video`/`https` build presets (those were upstream's historical Maven Central artifact names, not flags this script understands) — this fork's tiers (Free/Basic/Full/Full GPL, see [README § Available tiers](#available-tiers)) are defined by which `--disable-lib-*`/`--enable-gpl` flags each workflow passes, not by upstream's old variant names.
 
 See [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki) for history.
 
