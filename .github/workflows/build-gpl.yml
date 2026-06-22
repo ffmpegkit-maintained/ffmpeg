@@ -1,0 +1,212 @@
+name: Build (GPL variant)
+
+# Separate from build.yml on purpose: --enable-gpl changes the resulting
+# AAR's license from LGPL-3.0 to GPL-3.0 (enables x264, x265, xvidcore,
+# libvidstab, rubberband - see android.sh's is_gpl_licensed()/--full
+# expansion). Keeping this as its own workflow with its own cache/ci-cache
+# namespace avoids ever mixing GPL and non-GPL build artifacts under the
+# same key, and keeps the license-affecting trigger explicit and separate
+# from the default LGPL release path.
+
+on:
+  push:
+    tags: ["v*-gpl"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ffmpeg-kit (full + GPL, arm64-v8a)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: write
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config curl git \
+            build-essential yasm nasm gperf texinfo bison ragel \
+            python3 python3-pip unzip zip wget meson ninja-build \
+            doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
+
+      - name: Install Android platform 35
+        run: |
+          set +o pipefail
+          yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          set -o pipefail
+          "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+
+      - name: Cache Android NDK r26c
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ~/.ndk
+          key: ndk-r26c-linux
+
+      - name: Download Android NDK r26c
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          curl -s "https://dl.google.com/android/repository/android-ndk-r26c-linux.zip" -o ndk.zip
+          unzip -q -o ndk.zip -d "${HOME}/.ndk"
+
+      - name: Export ANDROID_NDK_ROOT
+        run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
+
+      # Distinct cache key/suffix (ffmpeg-kit-build-gpl-..., ci-cache-gpl
+      # branch) from build.yml's LGPL build - different ENABLED_LIBRARIES
+      # set (x264/x265/xvidcore/libvidstab/rubberband added), must never
+      # share a cache namespace with the non-GPL artifacts.
+      - name: Restore actions/cache (covers any run that finished naturally)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            prebuilt
+            src
+          key: ffmpeg-kit-build-gpl-${{ hashFiles('android.sh', 'scripts/**') }}
+
+      - name: Restore latest build checkpoint from ci-cache-gpl branch
+        run: |
+          if git ls-remote --exit-code --heads origin ci-cache-gpl >/dev/null 2>&1; then
+            echo "Found ci-cache-gpl branch, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 origin ci-cache-gpl
+            git archive FETCH_HEAD | tar -x
+            echo "Restored:"
+            find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
+          else
+            echo "No ci-cache-gpl branch yet - starting fresh"
+          fi
+
+      # --enable-gpl makes --full enable every library unconditionally,
+      # including the GPL-licensed ones (x264, x265, xvidcore, libvidstab,
+      # rubberband - see is_gpl_licensed() in scripts/function.sh). That's
+      # what makes this AAR GPL-3.0 instead of LGPL-3.0; android.sh bundles
+      # tools/license/LICENSE.GPLv3 into the output automatically when
+      # GPL_ENABLED=yes. Same GnuTLS/OpenSSL conflict as the LGPL build
+      # applies here too - --disable-lib-gnutls for the same reason.
+      - name: Build full + GPL variant (arm64-v8a only)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          checkpoint() {
+            flock /tmp/checkpoint.lock -c '
+              tmp=$(mktemp -d)
+              cp -r prebuilt "$tmp/" 2>/dev/null
+              cp -r src "$tmp/" 2>/dev/null
+              ( cd "$tmp" \
+                && git init -q -b ci-cache-gpl \
+                && git add -A \
+                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
+                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-gpl )
+              rm -rf "$tmp"
+            '
+          }
+          (
+            while true; do
+              sleep 120
+              checkpoint || true
+            done
+          ) &
+          CHECKPOINT_PID=$!
+
+          touch build.log
+          tail -f build.log &
+          TAIL_PID=$!
+          set +e
+          ./android.sh --full --enable-gpl --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          BUILD_EXIT=$?
+          kill "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          wait "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          checkpoint || true
+          exit "$BUILD_EXIT"
+
+      - name: Print build log
+        if: always()
+        run: cat build.log || echo "no build.log produced (failed before the build step ran)"
+
+      - name: Print ffbuild config log on failure
+        if: failure()
+        run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
+
+      - name: Print toolchain env and per-library config logs on failure
+        if: failure()
+        run: |
+          echo "=== toolchain env ==="
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          echo "AR=$AR"
+          echo "AS=$AS"
+          echo "LD=$LD"
+          echo "STRIP=$STRIP"
+          echo "RANLIB=$RANLIB"
+          echo "CFLAGS=$CFLAGS"
+          echo "CXXFLAGS=$CXXFLAGS"
+          echo "LDFLAGS=$LDFLAGS"
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT"
+          echo
+          echo "=== config.log files under src/ (most recently modified first) ==="
+          while IFS= read -r log; do
+            echo "--- $log ---"
+            tail -150 "$log"
+            echo
+          done < <(find src -iname "config.log" -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2- | head -3)
+
+      - name: Verify 16 KB page size alignment
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r so; do
+            min_exp=99
+            while IFS= read -r exp; do
+              [[ -z "$exp" ]] && continue
+              (( exp < min_exp )) && min_exp=$exp
+            done < <(objdump -p "$so" | grep -A1 LOAD | grep -oE 'align 2\*\*[0-9]+' | grep -oE '[0-9]+$')
+            echo "$so: align=2**${min_exp}"
+            if (( min_exp < 14 )); then
+              echo "::error file=${so}::not 16 KB aligned (got 2**${min_exp})"
+              fail=1
+            fi
+          done < <(find prebuilt -name "*.so")
+          exit "$fail"
+
+      # android.sh writes the GPL/LGPL license text to
+      # android/ffmpeg-kit-android-lib/src/main/res/raw/license.txt (an
+      # Android raw resource, packaged into the AAR's res/raw/ at build
+      # time) based on GPL_ENABLED - verify it's actually the GPLv3 text
+      # both at the source location and inside the final .aar itself.
+      - name: Verify GPL license bundled
+        run: |
+          set -e
+          src_license="android/ffmpeg-kit-android-lib/src/main/res/raw/license.txt"
+          if [[ ! -f "$src_license" ]] || ! grep -q "GNU GENERAL PUBLIC LICENSE" "$src_license"; then
+            echo "::error::GPLv3 license text not found at $src_license - GPL_ENABLED may not have taken effect"
+            exit 1
+          fi
+          aar_path="prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar"
+          if ! unzip -p "$aar_path" res/raw/license.txt 2>/dev/null | grep -q "GNU GENERAL PUBLIC LICENSE"; then
+            echo "::error::GPLv3 license text not found inside the built .aar's res/raw/license.txt"
+            exit 1
+          fi
+          echo "GPLv3 license confirmed bundled, both at the source resource and inside the final .aar."
+
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-kit-full-gpl-arm64-v8a
+          path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
