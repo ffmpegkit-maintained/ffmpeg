@@ -77,7 +77,7 @@ else ifeq ($(TARGET_PLATFORM),android-17)
     MY_SRC_FILES += android_lts_support.c
 endif
 
-MY_CFLAGS := -Wall -Werror -Wno-unused-parameter -Wno-switch -Wno-sign-compare
+MY_CFLAGS := -Wall -Werror -Wno-unused-parameter -Wno-switch -Wno-sign-compare -Wno-error=single-bit-bitfield-constant-conversion
 MY_LDLIBS := -llog -lz -landroid
 
 MY_BUILD_GENERIC_FFMPEG_KIT := true
