@@ -20,6 +20,12 @@ jobs:
     # killed it (conclusion: cancelled, no error). Bound that here so a
     # repeat hang fails fast instead of burning a full day of turnaround.
     timeout-minutes: 180
+    # Needed to push incremental checkpoints to the ci-cache branch (see
+    # below) - actions/cache alone isn't enough, its save step is skipped
+    # entirely on a cancelled/timed-out job, which is exactly the failure
+    # mode we keep hitting.
+    permissions:
+      contents: write
 
     defaults:
       run:
@@ -69,26 +75,72 @@ jobs:
       - name: Export ANDROID_NDK_ROOT
         run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
-      # Keyed on a hash of the build scripts themselves (no restore-keys
-      # fallback): android.sh only skips rebuilding a library when its
-      # prebuilt/<arch>/<lib> dir already exists, with no awareness of
-      # whether it was built with different flags. A stale cache from a
-      # different script version could silently ship a half-fixed build,
-      # so any script change must invalidate the cache outright.
-      - name: Cache ffmpeg-kit native build (prebuilt + downloaded sources)
-        uses: actions/cache@v4
-        with:
-          path: |
-            prebuilt
-            src
-          key: ffmpeg-kit-build-${{ hashFiles('android.sh', 'scripts/**') }}
+      # actions/cache's restore-on-start/save-at-end model isn't enough here:
+      # the save (post-step) is skipped entirely when the job is cancelled
+      # or hits its timeout - which is exactly what happened twice (one
+      # manual cancel, one 6h hard-timeout kill), so it has never actually
+      # saved anything. Use a git branch as the checkpoint store instead:
+      # a `git push` that already succeeded is durable regardless of what
+      # happens to the job afterward.
+      - name: Restore previous build checkpoint from ci-cache branch
+        run: |
+          if git ls-remote --exit-code --heads origin ci-cache >/dev/null 2>&1; then
+            echo "Found ci-cache branch, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 origin ci-cache
+            git archive FETCH_HEAD | tar -x
+            echo "Restored:"
+            find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
+          else
+            echo "No ci-cache branch yet - starting fresh"
+          fi
 
       # --full enables both gnutls and openssl, which FFmpeg's own configure
       # refuses outright ("GnuTLS and OpenSSL must not be enabled at the same
       # time."). Keep OpenSSL (Apache-2.0, no GPL-adjacent licensing
       # questions) and drop GnuTLS.
+      #
+      # Pushes a checkpoint of prebuilt/ + src/ to the ci-cache branch every
+      # 2 minutes in the background, so a hang/timeout-kill only loses the
+      # last <2 minutes of progress instead of the entire run. Known caveat:
+      # this can occasionally snapshot a library mid-install (cp racing with
+      # make), which android.sh's own already-built check wouldn't catch -
+      # acceptable risk for a resilience mechanism, not a correctness
+      # guarantee; the 16 KB alignment check and AAR assembly step below
+      # still have to pass either way.
       - name: Build full variant (arm64-v8a only)
-        run: ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          checkpoint() {
+            local tmp
+            tmp=$(mktemp -d)
+            cp -r prebuilt "$tmp/" 2>/dev/null
+            cp -r src "$tmp/" 2>/dev/null
+            ( cd "$tmp" \
+              && git init -q -b ci-cache \
+              && git add -A \
+              && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
+              && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache )
+            rm -rf "$tmp"
+          }
+          (
+            while true; do
+              sleep 120
+              checkpoint || true
+            done
+          ) &
+          CHECKPOINT_PID=$!
+
+          touch build.log
+          tail -f build.log &
+          TAIL_PID=$!
+          set +e
+          ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          BUILD_EXIT=$?
+          kill "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          wait "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          checkpoint || true
+          exit "$BUILD_EXIT"
 
       - name: Print build log
         if: always()
