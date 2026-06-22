@@ -151,18 +151,19 @@ jobs:
           CHECKPOINT_PID=$!
 
           touch build.log
-          tail -f build.log &
-          TAIL_PID=$!
           set +e
           ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
           BUILD_EXIT=$?
-          kill "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
-          wait "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          kill "$CHECKPOINT_PID" 2>/dev/null || true
+          wait "$CHECKPOINT_PID" 2>/dev/null || true
           checkpoint || true
           exit "$BUILD_EXIT"
 
-      - name: Print build log
-        if: always()
+      # Pipeline is stable now (all four tiers verified green) - no need to
+      # live-stream build.log into the Actions log on every run anymore;
+      # only dump it when something actually breaks.
+      - name: Print build log on failure
+        if: failure()
         run: cat build.log || echo "no build.log produced (failed before the build step ran)"
 
       - name: Print ffbuild config log on failure
