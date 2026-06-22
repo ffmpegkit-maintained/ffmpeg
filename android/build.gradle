@@ -2,9 +2,16 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.6.0'
+        // Only used by the Free tier (ffmpeg-kit-android-lib applies it
+        // conditionally) to publish to Maven Central - see build-free.yml.
+        // 0.35.0+ requires AGP 8.13+; we're pinned to AGP 8.6.0 (verified
+        // working across all 4 build tiers), so stay on the last version
+        // that supports AGP 8.0+: 0.34.0.
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.34.0'
     }
 }
 
