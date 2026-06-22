@@ -91,6 +91,26 @@ FFmpegKit ships several prebuilt variants so you only include the codecs/protoco
 
 Pick the smallest variant that covers your codec/protocol needs to keep your app size down.
 
+## What's in the published `full` LGPL build
+
+The `full` AAR on [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) is built with `--full` (every library compatible with LGPL-3.0 — no GPL-licensed codecs; see [docs/MIGRATION.md](docs/MIGRATION.md) and the GPL variant note below for that):
+
+| Category | Included |
+|---|---|
+| **Video codecs** | AV1 (`libaom` encode/decode, `dav1d` decode), VP8/VP9 (`libvpx`), HEVC/H.265 encode (`kvazaar`), H.264 encode (`openh264`), Theora (`libtheora`) |
+| **Audio codecs** | MP3 encode (`lame`, `shine`), AMR-NB/WB (`opencore-amr`, `vo-amrwbenc`), Opus (`opus`), Speex (`speex`), Vorbis (`libvorbis`), MP2 encode (`twolame`), `libsndfile` |
+| **Subtitles & text** | `libass` (subtitle rendering), `harfbuzz` (text shaping), `freetype` (fonts), `fribidi` (bidi text), `fontconfig` (font matching) |
+| **Images** | `libwebp`, `giflib`, `libjpeg`, `libpng`, `libtiff` |
+| **OCR** | `tesseract` + `leptonica` |
+| **Streaming / network** | `openssl` (TLS — see note below on why not GnuTLS), `srt` (Secure Reliable Transport) |
+| **Other** | `chromaprint` (audio fingerprinting), `zimg` (scaling/colorspace), `snappy` (compression), `soxr` (resampling), `libxml2`, Android `MediaCodec` (hardware codec access), Android `zlib` |
+
+**Not included:** H.264/H.265 *encoding* via `x264`/`x265` (GPL-licensed — see below), GnuTLS (conflicts with OpenSSL in FFmpeg's own `configure`; both provide TLS, only one can be enabled), `rubberband`, `xvidcore`, `libvidstab` (all GPL-licensed).
+
+### GPL variant (x264/x265)
+
+A separate build (`.github/workflows/build-gpl.yml`, not yet published as a release) additionally enables `x264`, `x265`, `xvidcore`, `libvidstab` and `rubberband` via `--enable-gpl`. **This changes the resulting AAR's license from LGPL-3.0 to GPL-3.0** — copyleft applies to your app if you statically/dynamically link it. Kept as a fully separate artifact/workflow/cache so it never mixes with the LGPL build above.
+
 ## Compatibility
 
 State of the `main` branch source (and of any `.aar` produced by the CI build going forward):
