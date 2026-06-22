@@ -125,17 +125,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # flock prevents the background loop's checkpoint and the final
+          # one (after kill+wait, which doesn't reliably block on an
+          # in-flight push) from racing on the same ref - seen as
+          # "cannot lock ref ... is at X but expected Y" on a first pass.
           checkpoint() {
-            local tmp
-            tmp=$(mktemp -d)
-            cp -r prebuilt "$tmp/" 2>/dev/null
-            cp -r src "$tmp/" 2>/dev/null
-            ( cd "$tmp" \
-              && git init -q -b ci-cache \
-              && git add -A \
-              && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-              && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache )
-            rm -rf "$tmp"
+            flock /tmp/checkpoint.lock -c '
+              tmp=$(mktemp -d)
+              cp -r prebuilt "$tmp/" 2>/dev/null
+              cp -r src "$tmp/" 2>/dev/null
+              ( cd "$tmp" \
+                && git init -q -b ci-cache \
+                && git add -A \
+                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
+                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache )
+              rm -rf "$tmp"
+            '
           }
           (
             while true; do
@@ -205,8 +210,13 @@ jobs:
           done < <(find prebuilt -name "*.so")
           exit "$fail"
 
+      # android.sh writes to prebuilt/<aar-dir>/ffmpeg-kit/ffmpeg-kit.aar
+      # (FFMPEG_KIT_AAR="${BASEDIR}/prebuilt/$(get_aar_directory)/ffmpeg-kit"
+      # in android.sh) - an extra ffmpeg-kit/ subdirectory past what the
+      # path here previously assumed, which silently produced an empty
+      # artifact (if-no-files-found defaults to "warn", not failing the job).
       - name: Upload AAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-kit-full-arm64-v8a
-          path: prebuilt/bundle-android-aar/ffmpeg-kit.aar
+          path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
