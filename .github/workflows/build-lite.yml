@@ -1,0 +1,194 @@
+name: Build (Lite variant)
+
+# The $19 tier: --full minus H.264/H.265 encoding (openh264, kvazaar - decode
+# stays, that's native FFmpeg) and a few large, niche feature blocks: OCR
+# (tesseract+leptonica), subtitle/text rendering (libass, harfbuzz, freetype,
+# fontconfig, fribidi - also drops FFmpeg's drawtext filter, which depends on
+# freetype), SRT streaming, and chromaprint audio fingerprinting. Still
+# LGPL-3.0 - no GPL codecs here, that's the separate build-gpl.yml tier.
+# See README "What's in the published full LGPL build" for the full
+# tier-by-tier breakdown shown to customers.
+
+on:
+  push:
+    tags: ["v*-lite"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ffmpeg-kit (lite, arm64-v8a)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: write
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config curl git \
+            build-essential yasm nasm gperf texinfo bison ragel \
+            python3 python3-pip unzip zip wget meson ninja-build \
+            doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
+
+      - name: Install Android platform 35
+        run: |
+          set +o pipefail
+          yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          set -o pipefail
+          "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+
+      - name: Cache Android NDK r26c
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ~/.ndk
+          key: ndk-r26c-linux
+
+      - name: Download Android NDK r26c
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          curl -s "https://dl.google.com/android/repository/android-ndk-r26c-linux.zip" -o ndk.zip
+          unzip -q -o ndk.zip -d "${HOME}/.ndk"
+
+      - name: Export ANDROID_NDK_ROOT
+        run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
+
+      # Distinct cache key/branch from build.yml and build-gpl.yml - a
+      # different ENABLED_LIBRARIES set (several libraries dropped), must
+      # never share a cache namespace with either of the other two tiers.
+      - name: Restore actions/cache (covers any run that finished naturally)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            prebuilt
+            src
+          key: ffmpeg-kit-build-lite-${{ hashFiles('android.sh', 'scripts/**') }}
+
+      - name: Restore latest build checkpoint from ci-cache-lite branch
+        run: |
+          if git ls-remote --exit-code --heads origin ci-cache-lite >/dev/null 2>&1; then
+            echo "Found ci-cache-lite branch, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 origin ci-cache-lite
+            git archive FETCH_HEAD | tar -x
+            echo "Restored:"
+            find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
+          else
+            echo "No ci-cache-lite branch yet - starting fresh"
+          fi
+
+      # Same GnuTLS/OpenSSL conflict as the other two tiers - --disable-lib-gnutls
+      # for the same reason. The rest of the --disable-lib-* flags are the
+      # Lite-specific exclusions described at the top of this file.
+      - name: Build lite variant (arm64-v8a only)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          checkpoint() {
+            flock /tmp/checkpoint.lock -c '
+              tmp=$(mktemp -d)
+              cp -r prebuilt "$tmp/" 2>/dev/null
+              cp -r src "$tmp/" 2>/dev/null
+              ( cd "$tmp" \
+                && git init -q -b ci-cache-lite \
+                && git add -A \
+                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
+                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-lite )
+              rm -rf "$tmp"
+            '
+          }
+          (
+            while true; do
+              sleep 120
+              checkpoint || true
+            done
+          ) &
+          CHECKPOINT_PID=$!
+
+          touch build.log
+          tail -f build.log &
+          TAIL_PID=$!
+          set +e
+          ./android.sh --full --enable-android-media-codec --enable-android-zlib \
+            --disable-lib-gnutls \
+            --disable-lib-openh264 --disable-lib-kvazaar \
+            --disable-lib-tesseract --disable-lib-leptonica \
+            --disable-lib-libass --disable-lib-harfbuzz --disable-lib-freetype --disable-lib-fontconfig --disable-lib-fribidi \
+            --disable-lib-srt --disable-lib-chromaprint \
+            --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          BUILD_EXIT=$?
+          kill "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          wait "$TAIL_PID" "$CHECKPOINT_PID" 2>/dev/null || true
+          checkpoint || true
+          exit "$BUILD_EXIT"
+
+      - name: Print build log
+        if: always()
+        run: cat build.log || echo "no build.log produced (failed before the build step ran)"
+
+      - name: Print ffbuild config log on failure
+        if: failure()
+        run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
+
+      - name: Print toolchain env and per-library config logs on failure
+        if: failure()
+        run: |
+          echo "=== toolchain env ==="
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          echo "AR=$AR"
+          echo "AS=$AS"
+          echo "LD=$LD"
+          echo "STRIP=$STRIP"
+          echo "RANLIB=$RANLIB"
+          echo "CFLAGS=$CFLAGS"
+          echo "CXXFLAGS=$CXXFLAGS"
+          echo "LDFLAGS=$LDFLAGS"
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT"
+          echo
+          echo "=== config.log files under src/ (most recently modified first) ==="
+          while IFS= read -r log; do
+            echo "--- $log ---"
+            tail -150 "$log"
+            echo
+          done < <(find src -iname "config.log" -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2- | head -3)
+
+      - name: Verify 16 KB page size alignment
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r so; do
+            min_exp=99
+            while IFS= read -r exp; do
+              [[ -z "$exp" ]] && continue
+              (( exp < min_exp )) && min_exp=$exp
+            done < <(objdump -p "$so" | grep -A1 LOAD | grep -oE 'align 2\*\*[0-9]+' | grep -oE '[0-9]+$')
+            echo "$so: align=2**${min_exp}"
+            if (( min_exp < 14 )); then
+              echo "::error file=${so}::not 16 KB aligned (got 2**${min_exp})"
+              fail=1
+            fi
+          done < <(find prebuilt -name "*.so")
+          exit "$fail"
+
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-kit-lite-arm64-v8a
+          path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
