@@ -67,16 +67,21 @@ android {
 // files on Gumroad, not via this task, so this block being present is
 // harmless for them.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free", "6.0.1")
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free", "6.0.2")
 
     signAllPublications()
     publishToMavenCentral(true)
 
     pom {
         name = "FFmpegKit (Free)"
-        description = "Free, software-only tier of the ffmpegkit-maintained fork of FFmpegKit: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d) and Opus/Vorbis/Speex audio. No hardware codec access, H.264/H.265 encode, TLS, images, subtitles, OCR, SRT or audio fingerprinting - see the Basic/Full/Full GPL tiers on Gumroad for those."
+        description = "One of 4 tiers from the ffmpegkit-maintained FFmpegKit fork (Free/Basic/Full/Full GPL) - this is FREE: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Need H.264/H.265 encode, hardware codec access, TLS, images, OCR, subtitles or SRT? See the Basic/Full/Full GPL tiers via the Project URL link below."
         inceptionYear = "2026"
-        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit"
+        // Points at the GitHub Release with the tier comparison table AND
+        // direct Gumroad/Maven links together, not just the bare repo root
+        // - Maven Central renders this as an actual clickable "Project URL"
+        // link (unlike the plain-text description field above, which
+        // Central Portal does NOT linkify even when it contains a URL).
+        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android"
 
         licenses {
             license {
