@@ -78,38 +78,36 @@ dependencies {
 }
 ```
 
-## Available variants
+## Available tiers
 
-FFmpegKit ships several prebuilt variants so you only include the codecs/protocols your app needs:
+Three separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All three are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them.
 
-| Variant | Description | Typical use case |
-|---|---|---|
-| `full` | All supported external/native libraries and codecs enabled | Apps needing maximum format/codec coverage |
-| `audio` | Audio codecs and filters only (no video codecs) | Audio-only processing, transcoding, waveform/visualizers |
-| `video` | Video + audio codecs, no extra external libraries | General-purpose video editing/transcoding |
-| `https` | Minimal codec set with HTTPS/TLS support for network streams | Streaming/remote-source playback and conversion |
+| | **Lite** | **Full** | **GPL** |
+|---|---|---|---|
+| License | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
+| Build workflow | `build-lite.yml` | `build.yml` | `build-gpl.yml` |
+| H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
+| H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `x264` |
+| H.265/HEVC **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
+| H.265/HEVC **encode** | ❌ | ✅ via `kvazaar` | ✅ via `x265` |
+| AV1 | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` | ✅ `libaom`, `dav1d` |
+| VP8/VP9 | ✅ `libvpx` | ✅ `libvpx` | ✅ `libvpx` |
+| Theora | ✅ `libtheora` | ✅ `libtheora` | ✅ `libtheora` |
+| Audio codecs (MP3, AMR, Opus, Speex, Vorbis, MP2) | ✅ | ✅ | ✅ |
+| Images (WebP, GIF, JPEG, PNG, TIFF) | ✅ | ✅ | ✅ |
+| Subtitle/text rendering (`libass`, `harfbuzz`, `freetype`, `fontconfig`, `fribidi`) — also covers FFmpeg's `drawtext` filter | ❌ | ✅ | ✅ |
+| OCR (`tesseract`, `leptonica`) | ❌ | ✅ | ✅ |
+| SRT (secure streaming) | ❌ | ✅ | ✅ |
+| Audio fingerprinting (`chromaprint`) | ❌ | ✅ | ✅ |
+| TLS | ✅ `openssl` | ✅ `openssl` | ✅ `openssl` |
+| `xvidcore`, `libvidstab`, `rubberband` | ❌ | ❌ | ✅ (GPL-licensed) |
+| `zimg`, `snappy`, `soxr`, `libxml2`, Android `MediaCodec`/`zlib` | ✅ | ✅ | ✅ |
 
-Pick the smallest variant that covers your codec/protocol needs to keep your app size down.
+**H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
-## What's in the published `full` LGPL build
+**GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
-The `full` AAR on [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) is built with `--full` (every library compatible with LGPL-3.0 — no GPL-licensed codecs; see [docs/MIGRATION.md](docs/MIGRATION.md) and the GPL variant note below for that):
-
-| Category | Included |
-|---|---|
-| **Video codecs** | AV1 (`libaom` encode/decode, `dav1d` decode), VP8/VP9 (`libvpx`), HEVC/H.265 encode (`kvazaar`), H.264 encode (`openh264`), Theora (`libtheora`) |
-| **Audio codecs** | MP3 encode (`lame`, `shine`), AMR-NB/WB (`opencore-amr`, `vo-amrwbenc`), Opus (`opus`), Speex (`speex`), Vorbis (`libvorbis`), MP2 encode (`twolame`), `libsndfile` |
-| **Subtitles & text** | `libass` (subtitle rendering), `harfbuzz` (text shaping), `freetype` (fonts), `fribidi` (bidi text), `fontconfig` (font matching) |
-| **Images** | `libwebp`, `giflib`, `libjpeg`, `libpng`, `libtiff` |
-| **OCR** | `tesseract` + `leptonica` |
-| **Streaming / network** | `openssl` (TLS — see note below on why not GnuTLS), `srt` (Secure Reliable Transport) |
-| **Other** | `chromaprint` (audio fingerprinting), `zimg` (scaling/colorspace), `snappy` (compression), `soxr` (resampling), `libxml2`, Android `MediaCodec` (hardware codec access), Android `zlib` |
-
-**Not included:** H.264/H.265 *encoding* via `x264`/`x265` (GPL-licensed — see below), GnuTLS (conflicts with OpenSSL in FFmpeg's own `configure`; both provide TLS, only one can be enabled), `rubberband`, `xvidcore`, `libvidstab` (all GPL-licensed).
-
-### GPL variant (x264/x265)
-
-A separate build (`.github/workflows/build-gpl.yml`, not yet published as a release) additionally enables `x264`, `x265`, `xvidcore`, `libvidstab` and `rubberband` via `--enable-gpl`. **This changes the resulting AAR's license from LGPL-3.0 to GPL-3.0** — copyleft applies to your app if you statically/dynamically link it. Kept as a fully separate artifact/workflow/cache so it never mixes with the LGPL build above.
+**⚠️ GPL tier license note:** `--enable-gpl` adds `x264`, `x265`, `xvidcore`, `libvidstab` and `rubberband`, which makes the resulting AAR **GPL-3.0 instead of LGPL-3.0**. Copyleft applies to your own app if you statically or dynamically link it — review what that means for your project's licensing before choosing this tier over Full. Kept as a fully separate artifact/workflow/cache so it never mixes with the LGPL builds.
 
 ## Compatibility
 
@@ -125,7 +123,7 @@ State of the `main` branch source (and of any `.aar` produced by the CI build go
 
 > **Note:** the [`v6.0.0-lts-android`](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.0-lts-android) release currently on [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) was built **before** the compileSdk 35 bump and the 16 KB alignment fix — it's still compileSdk 33 and unaligned. Push a new `v*` tag to run the CI build ([.github/workflows/build.yml](.github/workflows/build.yml), tag-triggered) and cut a release that actually matches this table.
 
-CI builds only the `full` variant — `android.sh` has no `audio`/`video`/`https` build presets (those are upstream's historical Maven Central artifact names, not flags this script understands). The variant table above describes what upstream once shipped; only `full` is currently buildable/published from this fork.
+`android.sh` has no `audio`/`video`/`https` build presets (those were upstream's historical Maven Central artifact names, not flags this script understands) — this fork's three tiers (Lite/Full/GPL, see [README § Available tiers](#available-tiers)) are defined by which `--disable-lib-*`/`--enable-gpl` flags each of the three workflows passes, not by upstream's old variant names.
 
 See [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki) for history.
 
