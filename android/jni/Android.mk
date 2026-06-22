@@ -91,9 +91,12 @@ ifeq ($(MY_ARMV7_NEON), true)
     LOCAL_CFLAGS := $(MY_CFLAGS)
     LOCAL_LDLIBS := $(MY_LDLIBS)
     LOCAL_SHARED_LIBRARIES := libavcodec_neon libavfilter_neon libswscale_neon libavformat_neon libavutil_neon libswresample_neon libavdevice_neon
-    ifeq ($(APP_STL), c++_shared)
-        LOCAL_SHARED_LIBRARIES += c++_shared # otherwise NDK will not add the library for packaging
-    endif
+    # NOT adding c++_shared to LOCAL_SHARED_LIBRARIES here: NDK r26+'s
+    # ndk-build validates module dependencies strictly and fails with
+    # "depends on undefined modules: c++_shared" (c++_shared isn't a real
+    # ndk-build module to depend on, it's linked in via APP_STL). Worked
+    # around on older NDKs by listing it anyway; r26c doesn't need or
+    # tolerate that. See github.com/arthenica/ffmpeg-kit/issues/1076.
     LOCAL_ARM_NEON := true
     include $(BUILD_SHARED_LIBRARY)
 
@@ -113,9 +116,9 @@ ifeq ($(MY_BUILD_GENERIC_FFMPEG_KIT), true)
     LOCAL_CFLAGS := $(MY_CFLAGS)
     LOCAL_LDLIBS := $(MY_LDLIBS)
     LOCAL_SHARED_LIBRARIES := libavfilter libavformat libavcodec libavutil libswresample libavdevice libswscale
-    ifeq ($(APP_STL), c++_shared)
-        LOCAL_SHARED_LIBRARIES += c++_shared # otherwise NDK will not add the library for packaging
-    endif
+    # See the matching comment in the armv7a_neon block above - same NDK
+    # r26c module-validation issue, c++_shared isn't a real dependency to
+    # list here.
     LOCAL_ARM_NEON := ${MY_ARM_NEON}
     include $(BUILD_SHARED_LIBRARY)
 
