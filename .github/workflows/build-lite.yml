@@ -1,13 +1,15 @@
 name: Build (Lite variant)
 
-# The $19 tier: --full minus H.264/H.265 encoding (openh264, kvazaar - decode
-# stays, that's native FFmpeg) and a few large, niche feature blocks: OCR
-# (tesseract+leptonica), subtitle/text rendering (libass, harfbuzz, freetype,
-# fontconfig, fribidi - also drops FFmpeg's drawtext filter, which depends on
-# freetype), SRT streaming, and chromaprint audio fingerprinting. Still
-# LGPL-3.0 - no GPL codecs here, that's the separate build-gpl.yml tier.
-# See README "What's in the published full LGPL build" for the full
-# tier-by-tier breakdown shown to customers.
+# The $19 tier: --full minus H.265 encoding (kvazaar - H.264 encode via
+# openh264 is KEPT, it's the single most common use case and dropping it
+# made the tier far less useful) and a few large, niche feature blocks:
+# OCR (tesseract+leptonica), subtitle/text rendering (libass, harfbuzz,
+# freetype, fontconfig, fribidi - also drops FFmpeg's drawtext filter,
+# which depends on freetype), SRT streaming, and chromaprint audio
+# fingerprinting. H.264/H.265 *decode* stays either way - that's native
+# FFmpeg, not tied to openh264/kvazaar at all. Still LGPL-3.0 - no GPL
+# codecs here, that's the separate build-gpl.yml tier. See README
+# "Available tiers" for the full tier-by-tier breakdown shown to customers.
 
 on:
   push:
@@ -127,7 +129,7 @@ jobs:
           set +e
           ./android.sh --full --enable-android-media-codec --enable-android-zlib \
             --disable-lib-gnutls \
-            --disable-lib-openh264 --disable-lib-kvazaar \
+            --disable-lib-kvazaar \
             --disable-lib-tesseract --disable-lib-leptonica \
             --disable-lib-libass --disable-lib-harfbuzz --disable-lib-freetype --disable-lib-fontconfig --disable-lib-fribidi \
             --disable-lib-srt --disable-lib-chromaprint \
