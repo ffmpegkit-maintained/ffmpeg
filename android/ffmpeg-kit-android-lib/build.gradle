@@ -1,3 +1,14 @@
+// GENERATED FILE - DO NOT EDIT DIRECTLY. android.sh unconditionally deletes
+// and recopies this file from tools/android/build.gradle (or
+// tools/android/build.lts.gradle with -l/--lts) at the very start of every
+// run (see android.sh lines ~38-46) - any edit made only here gets silently
+// wiped the next time any CI workflow runs ./android.sh. This bit us once:
+// a compileSdk 35 bump and the Maven Central publishing setup were both
+// only applied here and got wiped on every real CI build, while local
+// `./gradlew assembleRelease` runs (which don't go through android.sh)
+// kept using this file directly and made the change look like it worked.
+// Edit the templates instead; this file is kept in sync only so local
+// Gradle commands run against the same content CI actually builds with.
 apply plugin: 'com.android.library'
 apply plugin: 'com.vanniktech.maven.publish'
 
@@ -46,8 +57,8 @@ android {
 // com.vanniktech.maven.publish auto-configures android.publishing.singleVariant
 // ("release", withJavadocJar+withSourcesJar) itself for Android library
 // projects - a manual android.publishing.singleVariant block here conflicts
-// with that ("... DSL multiple times ... is not allowed"), so it's been
-// removed; assembleRelease/bundleReleaseAar still work the same way through
+// with that ("... DSL multiple times ... is not allowed"), so don't add one
+// back; assembleRelease/bundleReleaseAar still work the same way through
 // the plugin's own auto-configuration.
 //
 // Only the Free tier (built by .github/workflows/build-free.yml) actually

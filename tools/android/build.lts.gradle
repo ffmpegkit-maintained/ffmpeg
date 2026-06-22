@@ -1,15 +1,16 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.vanniktech.maven.publish'
 
 android {
     if (project.android.hasProperty("namespace")) {
         namespace 'com.arthenica.ffmpegkit'
     }
-    compileSdk 33
-    ndkVersion "22.1.7171670"
+    compileSdk 35
+    ndkVersion "26.2.11394342"
 
     defaultConfig {
         minSdk 16
-        targetSdk 33
+        targetSdk 35
         versionCode 160600
         versionName "6.0.LTS"
         project.archivesBaseName = "ffmpeg-kit"
@@ -40,12 +41,42 @@ android {
             systemProperty 'enable.ffmpeg.kit.test.mode', 'true'
         }
     }
+}
 
+// See the matching comment in tools/android/build.gradle - same
+// vanniktech-auto-configures-singleVariant reasoning applies here.
+mavenPublishing {
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free", "6.0.1")
 
-    publishing {
-        singleVariant('release') {
-            withJavadocJar()
-            withSourcesJar()
+    signAllPublications()
+    publishToMavenCentral(true)
+
+    pom {
+        name = "FFmpegKit (Free)"
+        description = "Free, software-only tier of the ffmpegkit-maintained fork of FFmpegKit: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d) and Opus/Vorbis/Speex audio. No hardware codec access, H.264/H.265 encode, TLS, images, subtitles, OCR, SRT or audio fingerprinting - see the Basic/Full/Full GPL tiers on Gumroad for those."
+        inceptionYear = "2026"
+        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit"
+
+        licenses {
+            license {
+                name = "GNU Lesser General Public License v3.0"
+                url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/blob/main/LICENSE"
+                distribution = "repo"
+            }
+        }
+
+        developers {
+            developer {
+                id = "ffmpegkit-maintained"
+                name = "ffmpegkit-maintained"
+                url = "https://github.com/ffmpegkit-maintained"
+            }
+        }
+
+        scm {
+            url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit"
+            connection = "scm:git:git://github.com/ffmpegkit-maintained/ffmpeg-kit.git"
+            developerConnection = "scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg-kit.git"
         }
     }
 }
