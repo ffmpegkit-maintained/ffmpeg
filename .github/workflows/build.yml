@@ -16,6 +16,10 @@ jobs:
     # releases. Use workflow_dispatch for an on-demand test run.
     name: Build ffmpeg-kit (full, arm64-v8a)
     runs-on: ubuntu-24.04
+    # A previous attempt hung silently for ~6h until GitHub's own hard cap
+    # killed it (conclusion: cancelled, no error). Bound that here so a
+    # repeat hang fails fast instead of burning a full day of turnaround.
+    timeout-minutes: 180
 
     defaults:
       run:
