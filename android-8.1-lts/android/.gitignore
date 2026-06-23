@@ -1,0 +1,8 @@
+/build
+/local.properties
+/.idea/
+/.gradle/
+/libs/
+/obj/
+/ffmpeg-kit-android-lib/build/
+*.tmp
