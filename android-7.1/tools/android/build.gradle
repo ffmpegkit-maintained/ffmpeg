@@ -1,0 +1,112 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.vanniktech.maven.publish'
+
+android {
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.arthenica.ffmpegkit'
+    }
+    compileSdk 35
+    ndkVersion "26.2.11394342"
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 35
+        versionCode 240600
+        versionName "6.0"
+        project.archivesBaseName = "ffmpeg-kit"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ["../libs"]
+        }
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+        unitTests.all {
+            systemProperty 'enable.ffmpeg.kit.test.mode', 'true'
+        }
+    }
+}
+
+// com.vanniktech.maven.publish auto-configures android.publishing.singleVariant
+// ("release", withJavadocJar+withSourcesJar) itself for Android library
+// projects - a manual android.publishing.singleVariant block here conflicts
+// with that ("... DSL multiple times ... is not allowed"), so don't add one
+// back; assembleRelease/bundleReleaseAar still work the same way through
+// the plugin's own auto-configuration.
+//
+// Only the Free tier (built by .github/workflows/build-free.yml) actually
+// invokes ./gradlew publishAndReleaseToMavenCentral - the other three tiers
+// (Basic/Full/Full GPL) share this same module but are distributed as
+// files on Gumroad, not via this task, so this block being present is
+// harmless for them.
+mavenPublishing {
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free", "6.0.2")
+
+    signAllPublications()
+    publishToMavenCentral(true)
+
+    pom {
+        name = "FFmpegKit (Free)"
+        description = "One of 4 tiers from the ffmpegkit-maintained FFmpegKit fork (Free/Basic/Full/Full GPL) - this is FREE: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Need H.264/H.265 encode, hardware codec access, TLS, images, OCR, subtitles or SRT? See the Basic/Full/Full GPL tiers via the Project URL link below."
+        inceptionYear = "2026"
+        // Points at the GitHub Release with the tier comparison table AND
+        // direct Gumroad/Maven links together, not just the bare repo root
+        // - Maven Central renders this as an actual clickable "Project URL"
+        // link (unlike the plain-text description field above, which
+        // Central Portal does NOT linkify even when it contains a URL).
+        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android"
+
+        licenses {
+            license {
+                name = "GNU Lesser General Public License v3.0"
+                url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/blob/main/LICENSE"
+                distribution = "repo"
+            }
+        }
+
+        developers {
+            developer {
+                id = "ffmpegkit-maintained"
+                name = "ffmpegkit-maintained"
+                url = "https://github.com/ffmpegkit-maintained"
+            }
+        }
+
+        scm {
+            url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit"
+            connection = "scm:git:git://github.com/ffmpegkit-maintained/ffmpeg-kit.git"
+            developerConnection = "scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg-kit.git"
+        }
+    }
+}
+
+task javadoc(type: Javadoc) {
+    title = 'FFmpegKit'
+    destinationDir = file("${projectDir}/../../docs/android/javadoc")
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    source = android.sourceSets.main.java.srcDirs
+    configurations.implementation.setCanBeResolved(true)
+    classpath += configurations.implementation
+}
+
+dependencies {
+    api 'com.arthenica:smart-exception-java:0.2.1'
+    testImplementation "androidx.test.ext:junit:1.1.5"
+    testImplementation 'org.json:json:20230618'
+}
