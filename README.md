@@ -40,10 +40,10 @@ Two build trees are published and maintained in parallel — pick the FFmpeg ver
 
 | Line | FFmpeg | Free tier (Maven Central) | Paid tiers (Gumroad) |
 |---|---|---|---|
-| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | Current file on [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
-| **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | Current file on [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
+| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
+| **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
 
-Both lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. The Gumroad products always contain the latest build for each tier — if you're unsure which line is in the current download, check the release notes on the product page.
+Both lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. Each LTS line has its own dedicated Gumroad products.
 
 ### Add the Free tier
 
