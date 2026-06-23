@@ -41,3 +41,7 @@ google-services.json
 
 # Local Claude Code permission overrides - not shared, this is a public repo
 .claude/
+
+# Temporary local smoke-test harness (real-device verification for the
+# 7.1 port, see CLAUDE.md) - not part of the project, never commit
+/test-app/
