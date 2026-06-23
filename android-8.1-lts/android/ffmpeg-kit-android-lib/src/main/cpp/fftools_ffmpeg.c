@@ -3465,8 +3465,6 @@ static int init_output_stream(OutputStream *ost, AVFrame *frame,
 
             for (i = 0; i < ost->enc_ctx->nb_coded_side_data; i++) {
                 const AVPacketSideData *sd_src = &ost->enc_ctx->coded_side_data[i];
-                uint8_t *dst_data;
-
                 AVPacketSideData *sd_dst2 = av_packet_side_data_new(
                     &ost->st->codecpar->coded_side_data,
                     &ost->st->codecpar->nb_coded_side_data,
