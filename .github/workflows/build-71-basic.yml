@@ -1,0 +1,194 @@
+name: Build 7.1 LTS (Basic variant)
+
+# FFmpeg 7.1 LTS line - coexists with the original 6.0-lts Basic tier
+# (build-basic.yml). Same library set/rationale: --full minus H.265
+# encoding (kvazaar - H.264 encode via openh264 is KEPT, it's the single
+# most common use case) and a few large, niche feature blocks: OCR
+# (tesseract+leptonica), subtitle/text rendering (libass, harfbuzz,
+# freetype, fontconfig, fribidi - also drops FFmpeg's drawtext filter),
+# SRT streaming, and chromaprint audio fingerprinting. H.264/H.265
+# *decode* stays either way - that's native FFmpeg. Still LGPL-3.0. See
+# docs/PATCH-NOTES.md for the FFmpeg 6.0 -> 7.1.5 port findings.
+
+on:
+  push:
+    tags: ["v*-basic71"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ffmpeg-kit 7.1 LTS (basic, arm64-v8a)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: android-7.1-lts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config curl git \
+            build-essential yasm nasm gperf texinfo bison ragel \
+            python3 python3-pip unzip zip wget meson ninja-build \
+            doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
+
+      - name: Install Android platform 35
+        run: |
+          set +o pipefail
+          yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          set -o pipefail
+          "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+
+      - name: Cache Android NDK r26c
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ~/.ndk
+          key: ndk-r26c-linux
+
+      - name: Download Android NDK r26c
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          curl -s "https://dl.google.com/android/repository/android-ndk-r26c-linux.zip" -o ndk.zip
+          unzip -q -o ndk.zip -d "${HOME}/.ndk"
+
+      - name: Export ANDROID_NDK_ROOT
+        run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
+
+      - name: Restore actions/cache (covers any run that finished naturally)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            android-7.1-lts/prebuilt
+            android-7.1-lts/src
+          key: ffmpeg-kit-build-71-basic-${{ hashFiles('android-7.1-lts/android.sh', 'android-7.1-lts/scripts/**') }}
+
+      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
+      # not a branch on this repo - same rationale as the 6.0-lts paid
+      # tiers. Distinct branch name (71-basic) from the production 6.0
+      # "basic" branch and from the diagnostic "port71-basic" branch used
+      # while validating this port - must never collide with either.
+      - name: Restore latest build checkpoint from private cache repo
+        env:
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
+        run: |
+          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git"
+          if git ls-remote --exit-code --heads "$REMOTE" 71-basic >/dev/null 2>&1; then
+            echo "Found 71-basic branch in ci-cache-private, restoring prebuilt/ and src/ from it"
+            git fetch --depth=1 "$REMOTE" 71-basic
+            git archive FETCH_HEAD | tar -x
+            echo "Restored:"
+            find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort || true
+          else
+            echo "No 71-basic branch yet in ci-cache-private - starting fresh"
+          fi
+
+      - name: Build basic variant (arm64-v8a only)
+        env:
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
+        run: |
+          checkpoint() {
+            flock /tmp/checkpoint.lock -c '
+              tmp=$(mktemp -d)
+              cp -r prebuilt "$tmp/" 2>/dev/null
+              cp -r src "$tmp/" 2>/dev/null
+              ( cd "$tmp" \
+                && git init -q -b 71-basic \
+                && git add -A \
+                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
+                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git" HEAD:71-basic )
+              rm -rf "$tmp"
+            '
+          }
+          (
+            while true; do
+              sleep 120
+              checkpoint || true
+            done
+          ) &
+          CHECKPOINT_PID=$!
+
+          touch build.log
+          set +e
+          ./android.sh --full --enable-android-media-codec --enable-android-zlib \
+            --disable-lib-gnutls \
+            --disable-lib-kvazaar \
+            --disable-lib-tesseract --disable-lib-leptonica \
+            --disable-lib-libass --disable-lib-harfbuzz --disable-lib-freetype --disable-lib-fontconfig --disable-lib-fribidi \
+            --disable-lib-srt --disable-lib-chromaprint \
+            --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          BUILD_EXIT=$?
+          kill "$CHECKPOINT_PID" 2>/dev/null || true
+          wait "$CHECKPOINT_PID" 2>/dev/null || true
+          checkpoint || true
+          exit "$BUILD_EXIT"
+
+      - name: Print build log on failure
+        if: failure()
+        run: cat build.log || echo "no build.log produced (failed before the build step ran)"
+
+      - name: Print ffbuild config log on failure
+        if: failure()
+        run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
+
+      - name: Print toolchain env and per-library config logs on failure
+        if: failure()
+        run: |
+          echo "=== toolchain env ==="
+          echo "CC=$CC"
+          echo "CXX=$CXX"
+          echo "AR=$AR"
+          echo "AS=$AS"
+          echo "LD=$LD"
+          echo "STRIP=$STRIP"
+          echo "RANLIB=$RANLIB"
+          echo "CFLAGS=$CFLAGS"
+          echo "CXXFLAGS=$CXXFLAGS"
+          echo "LDFLAGS=$LDFLAGS"
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT"
+          echo
+          echo "=== config.log files under src/ (most recently modified first) ==="
+          while IFS= read -r log; do
+            echo "--- $log ---"
+            tail -150 "$log"
+            echo
+          done < <(find src -iname "config.log" -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2- | head -3)
+
+      - name: Verify 16 KB page size alignment
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r so; do
+            min_exp=99
+            while IFS= read -r exp; do
+              [[ -z "$exp" ]] && continue
+              (( exp < min_exp )) && min_exp=$exp
+            done < <(objdump -p "$so" | grep -A1 LOAD | grep -oE 'align 2\*\*[0-9]+' | grep -oE '[0-9]+$')
+            echo "$so: align=2**${min_exp}"
+            if (( min_exp < 14 )); then
+              echo "::error file=${so}::not 16 KB aligned (got 2**${min_exp})"
+              fail=1
+            fi
+          done < <(find prebuilt -name "*.so")
+          exit "$fail"
+
+      # No actions/upload-artifact here on purpose - paid Gumroad tier,
+      # Actions artifacts on a public repo are downloadable by any signed-in
+      # GitHub user for free. The build step above already pushed the
+      # finished .aar to ci-cache-private's "71-basic" branch as its final
+      # checkpoint - fetch it from there instead.

@@ -4,9 +4,12 @@ on:
   push:
     # "v*" alone also matches v6.0.1-free/-basic/-gpl (glob isn't suffix-
     # anchored) - confirmed the hard way when pushing v6.0.1-free also
-    # queued this Full-tier build. Exclude the other three tiers' suffixed
-    # tags explicitly so each tag only triggers its own tier.
-    tags: ["v*", "!v*-free", "!v*-basic", "!v*-gpl"]
+    # queued this Full-tier build. Exclude the other three 6.0-line tiers'
+    # suffixed tags explicitly so each tag only triggers its own tier, and
+    # likewise for all four 7.1 LTS line tags (-free71/-basic71/-full71/
+    # -gpl71) - that line's own tiers, including its Full tier, must never
+    # trigger this 6.0-line build either.
+    tags: ["v*", "!v*-free", "!v*-basic", "!v*-gpl", "!v*-free71", "!v*-basic71", "!v*-full71", "!v*-gpl71"]
   workflow_dispatch:
 
 jobs:
