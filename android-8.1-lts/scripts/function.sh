@@ -210,6 +210,7 @@ get_library_name() {
   89) echo "linux-tesseract" ;;
   90) echo "linux-vaapi" ;;
   91) echo "linux-vo-amrwbenc" ;;
+  92) echo "whisper" ;;
   esac
 }
 
@@ -307,6 +308,7 @@ from_library_name() {
   linux-tesseract) echo 89 ;;
   linux-vaapi) echo 90 ;;
   linux-vo-amrwbenc) echo 91 ;;
+  whisper) echo 92 ;;
   esac
 }
 
@@ -317,7 +319,7 @@ is_library_supported_on_platform() {
   local library_index=$(from_library_name "$1")
   case ${library_index} in
   # ALL
-  16 | 17 | 18 | 23 | 27 | 28 | 32 | 34 | 35 | 36 | 50)
+  16 | 17 | 18 | 23 | 27 | 28 | 32 | 34 | 35 | 36 | 50 | 92)
     echo "0"
     ;;
 
@@ -1242,6 +1244,9 @@ set_library() {
     ;;
   xvidcore)
     ENABLED_LIBRARIES[LIBRARY_XVIDCORE]=$2
+    ;;
+  whisper)
+    ENABLED_LIBRARIES[LIBRARY_WHISPER]=$2
     ;;
   zimg)
     ENABLED_LIBRARIES[LIBRARY_ZIMG]=$2

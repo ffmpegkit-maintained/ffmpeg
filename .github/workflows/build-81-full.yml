@@ -125,7 +125,7 @@ jobs:
 
           touch build.log
           set +e
-          ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          ./android.sh --full --enable-whisper --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
           BUILD_EXIT=$?
           kill "$CHECKPOINT_PID" 2>/dev/null || true
           wait "$CHECKPOINT_PID" 2>/dev/null || true

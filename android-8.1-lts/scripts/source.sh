@@ -261,6 +261,11 @@ get_library_source() {
     SOURCE_ID="release-1_3_7"
     SOURCE_TYPE="TAG"
     ;;
+  whisper)
+    SOURCE_REPO_URL="https://github.com/ggml-org/whisper.cpp"
+    SOURCE_ID="v1.7.5"
+    SOURCE_TYPE="TAG"
+    ;;
   zimg)
     SOURCE_REPO_URL="https://github.com/arthenica/zimg"
     SOURCE_ID="release-3.0.5"

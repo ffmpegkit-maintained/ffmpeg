@@ -70,7 +70,7 @@ build_application_mk() {
     local LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
   fi
 
-  if [[ ${ENABLED_LIBRARIES[$LIBRARY_X265]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_TESSERACT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_OPENH264]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SNAPPY]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_RUBBERBAND]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_ZIMG]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SRT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_CHROMAPRINT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_LIBILBC]} -eq 1 ]] || [[ -n ${CUSTOM_LIBRARY_USES_CPP} ]]; then
+  if [[ ${ENABLED_LIBRARIES[$LIBRARY_X265]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_TESSERACT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_OPENH264]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SNAPPY]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_RUBBERBAND]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_ZIMG]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SRT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_CHROMAPRINT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_LIBILBC]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_WHISPER]} -eq 1 ]] || [[ -n ${CUSTOM_LIBRARY_USES_CPP} ]]; then
     local APP_STL="c++_shared"
   else
     local APP_STL="none"
@@ -397,6 +397,9 @@ get_cxxflags() {
   rubberband | srt | tesseract | zimg)
     echo "-std=c++11 ${OPTIMIZATION_FLAGS}"
     ;;
+  whisper)
+    echo "-std=c++17 ${OPTIMIZATION_FLAGS}"
+    ;;
   *)
     echo "-std=c++11 -fno-exceptions -fno-rtti ${OPTIMIZATION_FLAGS}"
     ;;
@@ -427,7 +430,7 @@ get_common_linked_libraries() {
   libvpx)
     echo "-lc -lm ${COMMON_LIBRARY_PATHS}"
     ;;
-  srt | tesseract | x265)
+  srt | tesseract | whisper | x265)
     echo "-lc -lm -ldl -llog -lc++_shared ${COMMON_LIBRARY_PATHS}"
     ;;
   *)
@@ -925,6 +928,26 @@ Description: Scaling, colorspace conversion, and dithering library
 Version: ${ZIMG_VERSION}
 
 Libs: -L\${libdir} -lzimg -lc++_shared
+Cflags: -I\${includedir}
+EOF
+}
+
+create_whisper_package_config() {
+  local WHISPER_VERSION="$1"
+
+  cat >"${INSTALL_PKG_CONFIG_DIR}/whisper.pc" <<EOF
+prefix="${LIB_INSTALL_BASE}"/whisper
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: whisper
+Description: High-performance inference of OpenAI's Whisper automatic speech recognition model
+URL: https://github.com/ggml-org/whisper.cpp
+Version: ${WHISPER_VERSION}
+
+Requires:
+Libs: -L\${libdir} -lwhisper -lc++_shared
 Cflags: -I\${includedir}
 EOF
 }
