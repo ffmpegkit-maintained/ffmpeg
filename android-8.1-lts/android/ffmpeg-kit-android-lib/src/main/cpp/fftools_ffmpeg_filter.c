@@ -952,8 +952,13 @@ static int configure_input_video_filter(FilterGraph *fg, InputFilter *ifilter,
         int32_t *displaymatrix = ifilter->displaymatrix;
         double theta;
 
-        if (!displaymatrix)
-            displaymatrix = (int32_t *)av_stream_get_side_data(ist->st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
+        if (!displaymatrix) {
+            const AVPacketSideData *_sd = av_packet_side_data_get(
+                ist->st->codecpar->coded_side_data,
+                ist->st->codecpar->nb_coded_side_data,
+                AV_PKT_DATA_DISPLAYMATRIX);
+            displaymatrix = _sd ? (int32_t *)_sd->data : NULL;
+        }
         theta = get_rotation(displaymatrix);
 
         if (fabs(theta - 90) < 1.0) {
