@@ -38,3 +38,6 @@ google-services.json
 /*.log
 /prebuilt/
 .DS_Store
+
+# Local Claude Code permission overrides - not shared, this is a public repo
+.claude/
