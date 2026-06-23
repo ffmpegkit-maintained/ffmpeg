@@ -25,7 +25,13 @@ A third build tree, `android-8.1-lts/`, targeting FFmpeg `n8.1.2` (8.1 "Hoare" l
 
 - **`AVCodecContext.ticks_per_frame` removed** — was used in two duration-calculation expressions. In the general case (non-interlaced), effectively cancelled out (same value in numerator and denominator), replaced with `1`. Affected: `fftools_ffmpeg.c` (4 sites in 2 identical blocks).
 
-- **`AVStream.nb_side_data` / `AVStream.side_data` removed** — stream-level packet side data moved to `AVStream.codecpar->coded_side_data` / `nb_coded_side_data`. **`av_stream_new_side_data()` also removed**, replaced by `av_packet_side_data_new(&codecpar->coded_side_data, &codecpar->nb_coded_side_data, type, size, 0)` (available since FFmpeg 7.0). Affected: `fftools_ffmpeg.c` (3 blocks, 5 sites total), `fftools_ffprobe.c` (1 block).
+- **`AVStream.nb_side_data` / `AVStream.side_data` removed** — stream-level packet side data moved to `AVStream.codecpar->coded_side_data` / `nb_coded_side_data`. **`av_stream_new_side_data()` also removed**, replaced by `av_packet_side_data_new(&codecpar->coded_side_data, &codecpar->nb_coded_side_data, type, size, 0)` (available since FFmpeg 7.0). Affected: `fftools_ffmpeg.c` (3 blocks, 5 sites total), `fftools_ffprobe.c` (1 block), `fftools_ffmpeg_demux.c` (1 site).
+
+- **`av_stream_get_side_data()` removed** — replaced by `av_packet_side_data_get(codecpar->coded_side_data, nb_coded_side_data, type)` which returns a `const AVPacketSideData *` (access `.data` for the payload). Affected: `fftools_ffmpeg_filter.c` (1 site — display matrix auto-rotation).
+
+- **`AV_CODEC_CAP_SUBFRAMES` removed** — this codec capability flag was eliminated in FFmpeg 8.0. The only use was a diagnostic log line in `fftools_opt_common.c`; the entire `if` block was removed. Affected: `fftools_opt_common.c` (1 site).
+
+- **`AVFilter.process_command` member removed from public struct** — this function pointer was part of the internal `AVFilter` struct exposed publicly; it was removed in FFmpeg 8.x as part of filter API cleanup. The only use was a ternary `filter->process_command ? 'C' : '.'` in a diagnostic listing in `fftools_opt_common.c`. Replaced with literal `0` (always outputs `'.'`). Affected: `fftools_opt_common.c` (1 site).
 
 - **`AVFrame.pkt_pos` / `AVFrame.pkt_size` removed** — were used in ffprobe's frame output to print the originating packet's byte position and size. No equivalent exists on `AVFrame` in FFmpeg 8.x (this information is now only available at demux time on `AVPacket`). Replaced with `print_str_opt("pkt_pos", "N/A")` / `print_str_opt("pkt_size", "N/A")` — these fields will show as N/A in ffprobe output for frames decoded with this build. Affected: `fftools_ffprobe.c` (2 sites).
 
@@ -38,6 +44,7 @@ A third build tree, `android-8.1-lts/`, targeting FFmpeg `n8.1.2` (8.1 "Hoare" l
 - **`--disable-postproc` configure abort** — this was the first build failure: FFmpeg configure exits immediately with "Unknown option" for any unrecognised flag, so this single stale flag blocked the entire FFmpeg compile step.
 - **`src/main/cpp/` directory missing from git** — the JNI source tree (`ffmpegkit.c`, `fftools_*.c/h`, `AndroidManifest.xml`, all Java sources) was not included when the `android-8.1-lts/` directory was initially set up. Copied from `android-7.1-lts/`, which carries the same codebase.
 - **All `.sh` scripts missing execute bit** — the entire `android-8.1-lts/scripts/` tree was added to git with mode `100644` instead of `100755`, causing `android.sh` to fail with "Permission denied" (exit 126) before any build work started. Fixed with `git update-index --chmod=+x` on all `.sh` files.
+- **`android/gradlew` missing execute bit** — same root cause: `android-8.1-lts/android/gradlew` was tracked at mode `100644` instead of `100755`, causing `./gradlew: Permission denied` at the Gradle AAR assembly step (after `ndk-build` had already succeeded). Fixed with `git update-index --chmod=+x android-8.1-lts/android/gradlew`.
 
 ## v7.1.5-lts-android — 2026-06-23
 
