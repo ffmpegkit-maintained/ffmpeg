@@ -9,7 +9,7 @@ on:
     # likewise for all four 7.1 LTS line tags (-free71/-basic71/-full71/
     # -gpl71) - that line's own tiers, including its Full tier, must never
     # trigger this 6.0-line build either.
-    tags: ["v*", "!v*-free", "!v*-basic", "!v*-gpl", "!v*-free71", "!v*-basic71", "!v*-full71", "!v*-gpl71"]
+    tags: ["v*", "!v*-free", "!v*-basic", "!v*-gpl", "!v*-free71", "!v*-basic71", "!v*-full71", "!v*-gpl71", "!v*-lts-android"]
   workflow_dispatch:
 
 jobs:
