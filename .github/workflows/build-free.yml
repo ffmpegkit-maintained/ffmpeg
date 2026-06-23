@@ -1,4 +1,4 @@
-name: Build (Free variant)
+name: Build 6.0 LTS (Free variant)
 
 # The free Maven Central tier: software-only (no Android MediaCodec, for
 # consistent behavior across devices regardless of manufacturer hardware

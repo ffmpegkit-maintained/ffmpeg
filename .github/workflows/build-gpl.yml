@@ -1,4 +1,4 @@
-name: Build (GPL variant)
+name: Build 6.0 LTS (Full GPL variant)
 
 # Separate from build.yml on purpose: --enable-gpl changes the resulting
 # AAR's license from LGPL-3.0 to GPL-3.0 (enables x264, x265, xvidcore,

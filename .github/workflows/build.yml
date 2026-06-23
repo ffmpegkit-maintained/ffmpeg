@@ -1,4 +1,4 @@
-name: Build
+name: Build 6.0 LTS (Full variant)
 
 on:
   push:
