@@ -1397,11 +1397,11 @@ enum AVPictureType forced_kf_apply(void *logctx, KeyframeForceCtx *kf,
             goto force_keyframe;
         }
     } else if (kf->type == KF_FORCE_SOURCE &&
-               in_picture->key_frame == 1 && !dup_idx) {
+               !!(in_picture->flags & AV_FRAME_FLAG_KEY) && !dup_idx) {
             goto force_keyframe;
     } else if (kf->type == KF_FORCE_SOURCE_NO_DROP && !dup_idx) {
         kf->dropped_keyframe = 0;
-        if ((in_picture->key_frame == 1) || kf->dropped_keyframe)
+        if (!!(in_picture->flags & AV_FRAME_FLAG_KEY) || kf->dropped_keyframe)
             goto force_keyframe;
     }
 
@@ -1478,7 +1478,7 @@ static void do_video_out(OutputFile *of,
         }
     }
     ost->last_dropped = nb_frames == nb_frames_prev && next_picture;
-    ost->kf.dropped_keyframe = ost->last_dropped && next_picture && next_picture->key_frame;
+    ost->kf.dropped_keyframe = ost->last_dropped && next_picture && !!(next_picture->flags & AV_FRAME_FLAG_KEY);
 
     /* duplicates frame if needed */
     for (i = 0; i < nb_frames; i++) {
@@ -2463,8 +2463,12 @@ static int decode_video(InputStream *ist, AVPacket *pkt, int *got_output, int64_
     if (!*got_output || ret < 0)
         return ret;
 
-    if(ist->top_field_first>=0)
-        decoded_frame->top_field_first = ist->top_field_first;
+    if(ist->top_field_first>=0) {
+        if (ist->top_field_first == 1)
+            decoded_frame->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+        else
+            decoded_frame->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+    }
 
     ist->frames_decoded++;
 
@@ -2502,7 +2506,7 @@ static int decode_video(InputStream *ist, AVPacket *pkt, int *got_output, int64_
                av_ts2timestr(decoded_frame->pts, &ist->st->time_base),
                best_effort_timestamp,
                av_ts2timestr(best_effort_timestamp, &ist->st->time_base),
-               decoded_frame->key_frame, decoded_frame->pict_type,
+               !!(decoded_frame->flags & AV_FRAME_FLAG_KEY), decoded_frame->pict_type,
                ist->st->time_base.num, ist->st->time_base.den);
     }
 
@@ -2806,10 +2810,10 @@ static int process_input_packet(InputStream *ist, const AVPacket *pkt, int no_eo
                 } else if(ist->dec_ctx->framerate.num != 0 && ist->dec_ctx->framerate.den != 0) {
                     int ticks = ist->last_pkt_repeat_pict >= 0 ?
                                 ist->last_pkt_repeat_pict + 1  :
-                                ist->dec_ctx->ticks_per_frame;
+                                1;
                     duration_dts = ((int64_t)AV_TIME_BASE *
                                     ist->dec_ctx->framerate.den * ticks) /
-                                    ist->dec_ctx->framerate.num / ist->dec_ctx->ticks_per_frame;
+                                    ist->dec_ctx->framerate.num;
                 }
 
                 if(ist->dts != AV_NOPTS_VALUE && duration_dts) {
@@ -2911,10 +2915,10 @@ static int process_input_packet(InputStream *ist, const AVPacket *pkt, int no_eo
             } else if(ist->dec_ctx->framerate.num != 0) {
                 int ticks = ist->last_pkt_repeat_pict >= 0 ?
                             ist->last_pkt_repeat_pict + 1  :
-                            ist->dec_ctx->ticks_per_frame;
+                            1;
                 ist->next_dts += ((int64_t)AV_TIME_BASE *
                                   ist->dec_ctx->framerate.den * ticks) /
-                                  ist->dec_ctx->framerate.num / ist->dec_ctx->ticks_per_frame;
+                                  ist->dec_ctx->framerate.num;
             }
             break;
         }
@@ -3120,24 +3124,27 @@ static int init_output_stream_streamcopy(OutputStream *ost)
         }
     }
 
-    if (ist->st->nb_side_data) {
-        for (i = 0; i < ist->st->nb_side_data; i++) {
-            const AVPacketSideData *sd_src = &ist->st->side_data[i];
-            uint8_t *dst_data;
-
-            dst_data = av_stream_new_side_data(ost->st, sd_src->type, sd_src->size);
-            if (!dst_data)
+    if (ist->st->codecpar->nb_coded_side_data) {
+        for (i = 0; i < ist->st->codecpar->nb_coded_side_data; i++) {
+            const AVPacketSideData *sd_src = &ist->st->codecpar->coded_side_data[i];
+            AVPacketSideData *sd_dst = av_packet_side_data_new(
+                &ost->st->codecpar->coded_side_data,
+                &ost->st->codecpar->nb_coded_side_data,
+                sd_src->type, sd_src->size, 0);
+            if (!sd_dst)
                 return AVERROR(ENOMEM);
-            memcpy(dst_data, sd_src->data, sd_src->size);
+            memcpy(sd_dst->data, sd_src->data, sd_src->size);
         }
     }
 
 #if FFMPEG_ROTATION_METADATA
     if (ost->rotate_overridden) {
-        uint8_t *sd = av_stream_new_side_data(ost->st, AV_PKT_DATA_DISPLAYMATRIX,
-                                              sizeof(int32_t) * 9);
+        AVPacketSideData *sd = av_packet_side_data_new(
+            &ost->st->codecpar->coded_side_data,
+            &ost->st->codecpar->nb_coded_side_data,
+            AV_PKT_DATA_DISPLAYMATRIX, sizeof(int32_t) * 9, 0);
         if (sd)
-            av_display_rotation_set((int32_t *)sd, -ost->rotate_override_value);
+            av_display_rotation_set((int32_t *)sd->data, -ost->rotate_override_value);
     }
 #endif
 
@@ -3320,14 +3327,18 @@ static int init_output_stream_encode(OutputStream *ost, AVFrame *frame)
         // Field order: autodetection
         if (frame) {
             if (enc_ctx->flags & (AV_CODEC_FLAG_INTERLACED_DCT | AV_CODEC_FLAG_INTERLACED_ME) &&
-                ost->top_field_first >= 0)
-                frame->top_field_first = !!ost->top_field_first;
-
-            if (frame->interlaced_frame) {
-                if (enc_ctx->codec->id == AV_CODEC_ID_MJPEG)
-                    enc_ctx->field_order = frame->top_field_first ? AV_FIELD_TT:AV_FIELD_BB;
+                ost->top_field_first >= 0) {
+                if (ost->top_field_first)
+                    frame->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
                 else
-                    enc_ctx->field_order = frame->top_field_first ? AV_FIELD_TB:AV_FIELD_BT;
+                    frame->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+            }
+
+            if (frame->flags & AV_FRAME_FLAG_INTERLACED) {
+                if (enc_ctx->codec->id == AV_CODEC_ID_MJPEG)
+                    enc_ctx->field_order = (frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) ? AV_FIELD_TT:AV_FIELD_BB;
+                else
+                    enc_ctx->field_order = (frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) ? AV_FIELD_TB:AV_FIELD_BT;
             } else
                 enc_ctx->field_order = AV_FIELD_PROGRESSIVE;
         }
