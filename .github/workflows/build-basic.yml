@@ -1,4 +1,5 @@
 name: Build 6.0 LTS (Basic variant)
+run-name: "Build 6.0 LTS — Basic${{ startsWith(github.ref, 'refs/tags/') && format(' — {0}', github.ref_name) || '' }}"
 
 # The $19 tier (renamed from "Lite"): --full minus H.265 encoding (kvazaar -
 # H.264 encode via openh264 is KEPT, it's the single most common use case
