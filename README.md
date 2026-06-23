@@ -45,7 +45,9 @@ Two build trees are published and maintained in parallel — pick the FFmpeg ver
 
 Both lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. The Gumroad products always contain the latest build for each tier — if you're unsure which line is in the current download, check the release notes on the product page.
 
-### Add the Free tier (Maven Central)
+### Add the Free tier
+
+**Via Gradle (Maven Central — recommended):**
 
 ```gradle
 // 6.0 LTS
@@ -54,6 +56,8 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1'
 // 7.1 LTS
 implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5'
 ```
+
+**Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
 
 For the paid tiers, download the `.aar` from [Gumroad](https://ffmpegkit.gumroad.com) and drop it in `app/libs/`, then:
 
