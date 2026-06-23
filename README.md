@@ -43,9 +43,21 @@ Three build trees are published and maintained in parallel — pick the FFmpeg v
 |---|---|---|---|
 | **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
-| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2` | Basic / Full / Full GPL (Gumroad — coming soon) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") + **Whisper.cpp v1.7.5** (on-device speech recognition & subtitles) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) / [Full $34](https://ffmpegkit.gumroad.com/l/sogbka) / [Full GPL $49](https://ffmpegkit.gumroad.com/l/axqjy) |
 
 All lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
+
+### 🎙️ 8.1 LTS — On-device speech recognition & automatic subtitles (Full and Full GPL tiers)
+
+The Full and Full GPL tiers of the 8.1 line bundle **Whisper.cpp v1.7.5**, OpenAI Whisper ported to C++. Two capabilities, all on-device with no API key and no internet connection required:
+
+**1. Automatic transcription & subtitle generation**
+Transcribe any audio or video in 99+ languages and generate SRT subtitle files directly on the device. Feed the SRT into FFmpeg's `subtitles` filter to burn captions into the output — the entire pipeline (audio extraction → transcription → subtitle burn) runs in a single AAR, no third-party service involved.
+
+**2. Automatic translation to English**
+Whisper's translate mode transcribes non-English speech and outputs English text in one pass — no separate translation step, no cloud call. French, Spanish, Japanese, Arabic, and 95 other languages → English subtitles, entirely offline.
+
+These two features together make the 8.1 Full tier a complete on-device video captioning and localisation engine — accessible and privacy-preserving, with zero per-request cost regardless of usage volume.
 
 ### Add the Free tier
 
