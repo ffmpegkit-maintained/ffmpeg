@@ -2270,7 +2270,7 @@ static void print_dynamic_hdr_vivid(WriterContext *w, const AVDynamicHDRVivid *m
                     print_int("3Spline_num", tm_params->three_Spline_num);
 
                     for (int j = 0; j < tm_params->three_Spline_num; j++) {
-                        const AVHDRVivid3SplineParams *sp = &tm_params->three_Spline[j];
+                        const AVHDRVivid3SplineParams *sp = &tm_params->three_spline[j];
                         print_int("3Spline_TH_mode", sp->th_mode);
                         print_q("3Spline_TH_enable_MB", sp->th_enable_mb, '/');
                         print_q("3Spline_TH_enable", sp->th_enable, '/');
