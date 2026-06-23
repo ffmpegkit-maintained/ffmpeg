@@ -7,7 +7,8 @@
 [![Latest release](https://img.shields.io/github/v/release/ffmpegkit-maintained/ffmpeg-kit?label=release)](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases)
 [![NDK](https://img.shields.io/badge/NDK-r26c-success.svg)](docs/BUILD.md)
 [![minSdk](https://img.shields.io/badge/minSdk-24-success.svg)](#compatibility)
-[![Maven Central](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free?label=maven-central)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free)
+[![Maven Central (6.0)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free?label=maven-central%206.0)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free)
+[![Maven Central (7.1)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free-71?label=maven-central%207.1)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free-71)
 
 ## Why this fork exists
 
@@ -33,29 +34,41 @@ This fork is **Android-only, intentionally**. Maintaining a single platform well
 
 ## Quick start
 
-Maven Central publication is in progress (see below); until it lands, consume the prebuilt `.aar` directly. The same call sites you already use from upstream FFmpegKit work unchanged.
+### Two LTS lines
 
-1. Download the `.aar` for the variant you need from [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) and drop it in `app/libs/`.
-2. Point Gradle at `libs/` and declare the dependency:
+Two build trees are published and maintained in parallel — pick the FFmpeg version that suits your project:
+
+| Line | FFmpeg | Free tier (Maven Central) | Paid tiers (Gumroad) |
+|---|---|---|---|
+| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | Current file on [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
+| **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | Current file on [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
+
+Both lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. The Gumroad products always contain the latest build for each tier — if you're unsure which line is in the current download, check the release notes on the product page.
+
+### Add the Free tier (Maven Central)
+
+```gradle
+// 6.0 LTS
+implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1'
+
+// 7.1 LTS
+implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5'
+```
+
+For the paid tiers, download the `.aar` from [Gumroad](https://ffmpegkit.gumroad.com) and drop it in `app/libs/`, then:
 
 ```gradle
 // app/build.gradle
-repositories {
-    flatDir {
-        dirs("libs")
-    }
-}
+repositories { flatDir { dirs("libs") } }
 
 dependencies {
-    implementation(name: "ffmpeg-kit-full-release", ext: "aar")
-
-    // Required runtime dependencies
+    implementation(name: "ffmpeg-kit-release", ext: "aar")
     implementation("androidx.annotation:annotation:1.7.1")
     implementation("com.arthenica:smart-exception-java:0.2.1")
 }
 ```
 
-3. Use it exactly like upstream FFmpegKit:
+### Call site (unchanged from upstream)
 
 ```java
 FFmpegKit.executeAsync("-i input.mp4 -c:v mpeg4 output.mp4", session -> {
@@ -65,29 +78,19 @@ FFmpegKit.executeAsync("-i input.mp4 -c:v mpeg4 output.mp4", session -> {
 });
 ```
 
-Migrating from `com.arthenica:ffmpeg-kit-*` on Maven Central? See [docs/MIGRATION.md](docs/MIGRATION.md).
-
-### Maven Central
-
-Publication to Maven Central is in progress and not yet available. Track progress in [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases).
-
-```gradle
-// Coming soon
-dependencies {
-    implementation("io.github.ffmpegkit-maintained:ffmpeg-kit-full:<version>")
-}
-```
+Migrating from `com.arthenica:ffmpeg-kit-*`? See [docs/MIGRATION.md](docs/MIGRATION.md).
 
 ## Available tiers
 
-Four separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All four are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them.
+Four separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All four are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them. Each tier is built for both the **6.0 LTS** and **7.1 LTS** lines (see [Quick start](#quick-start)).
 
 | | **Free** | **Basic** | **Full** | **Full GPL** |
 |---|---|---|---|---|
 | Distribution | Maven Central, free | Gumroad, $19 | Gumroad, $29 | Gumroad, $39 |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
-| Build workflow | `build-free.yml` | `build-basic.yml` | `build.yml` | `build-gpl.yml` |
-| Maven coordinates | `dev.ffmpegkit-maintained:ffmpeg-kit-free` | — (Gumroad file) | — (Gumroad file) | — (Gumroad file) |
+| Build workflows (6.0 / 7.1) | `build-free.yml` / `build-71-free.yml` | `build-basic.yml` / `build-71-basic.yml` | `build.yml` / `build-71-full.yml` | `build-gpl.yml` / `build-71-gpl.yml` |
+| Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
+| Maven coordinates (7.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | — | — | — |
 | Android `MediaCodec` (hardware accel) | ❌ | ✅ | ✅ | ✅ |
 | H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
 | H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `openh264` | ✅ via `x264` |
@@ -109,7 +112,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
-**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Build (`build-free.yml`) and publishing (`com.vanniktech.maven.publish` in `android/ffmpeg-kit-android-lib/build.gradle`, gated to `v*-free` tag pushes only) are wired up; first actual publish to Maven Central hasn't happened yet — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
+**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free` (6.0 line) and `dev.ffmpegkit-maintained:ffmpeg-kit-free-71` (7.1 line); tag-triggered builds handle publishing automatically.
 
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
@@ -127,7 +130,7 @@ State of the `main` branch source (and of any `.aar` produced by the CI build go
 | **ABI** | `arm64-v8a` only — CI builds and publishes this ABI exclusively; other ABIs are buildable from source via `android.sh` but not published |
 | **16 KB page size alignment** | Enforced — native libraries are linked with `-Wl,-z,max-page-size=16384`, and the CI build fails if any `.so` isn't 16 KB-aligned (see the "Verify 16 KB page size alignment" step in [.github/workflows/build.yml](.github/workflows/build.yml)) |
 
-> **Note:** the [`v6.0.0-lts-android`](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.0-lts-android) release currently on [Releases](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) was built **before** the compileSdk 35 bump and the 16 KB alignment fix — it's still compileSdk 33 and unaligned. Push a new `v*` tag to run the CI build ([.github/workflows/build.yml](.github/workflows/build.yml), tag-triggered) and cut a release that actually matches this table.
+> Current releases ([v6.0.1-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android) and [v7.1.5-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v7.1.5-lts-android)) are fully up to date with this table — compileSdk 35, NDK r26c, and 16 KB alignment enforced.
 
 `android.sh` has no `audio`/`video`/`https` build presets (those were upstream's historical Maven Central artifact names, not flags this script understands) — this fork's tiers (Free/Basic/Full/Full GPL, see [README § Available tiers](#available-tiers)) are defined by which `--disable-lib-*`/`--enable-gpl` flags each workflow passes, not by upstream's old variant names.
 
