@@ -96,7 +96,7 @@ jobs:
             git fetch --depth=1 "$REMOTE" basic
             git archive FETCH_HEAD | tar -x
             echo "Restored:"
-            find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort
+            find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort || true
           else
             echo "No basic branch yet in ci-cache-private - starting fresh"
           fi
