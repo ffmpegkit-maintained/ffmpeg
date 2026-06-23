@@ -2,7 +2,7 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
-## In progress — FFmpeg 8.1.2 port (`android-8.1-lts/`, not yet released)
+## v8.1.2-lts-android — 2026-06-23
 
 A third build tree, `android-8.1-lts/`, targeting FFmpeg `n8.1.2` (8.1 "Hoare" line, latest patch as of 2026-06-17). Same four-tier structure (Free/Basic/Full/Full GPL), same NDK r26c, same 16 KB page alignment. Free tier Maven artifact: `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2`.
 
@@ -11,7 +11,7 @@ A third build tree, `android-8.1-lts/`, targeting FFmpeg `n8.1.2` (8.1 "Hoare" l
 - **Whisper.cpp v1.7.5** (ggml-org/whisper.cpp) integrated as library index 92 in the Full and Full GPL tiers — new `scripts/android/whisper.sh` build script, cmake-based, static, with `WHISPER_BUILD_TESTS/EXAMPLES/SERVER=OFF`
 - Vulkan video codec acceleration improvements (H.264, AV1, ProRes) from upstream 8.x
 
-**Port status:** Free tier CI currently building green (in progress). All 4 workflows created and wired. Will be released as `v8.1.2-lts-android` once all four tiers build green.
+**Status:** Free tier published on Maven Central as `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2`. Paid tiers (Basic/Full/Full GPL) built and available on [Gumroad](https://ffmpegkit.gumroad.com).
 
 **FFmpeg 8.x breaking API changes found during port** — all documented in `doc/APIchanges` in the FFmpeg source tree. Changes were required in our copies of `fftools_ffmpeg.c` and `fftools_ffprobe.c` (these are frozen snapshots of FFmpeg's internal CLI tool source, carried in the repo since 6.0 and only updated when a new FFmpeg version removes the fields they use):
 

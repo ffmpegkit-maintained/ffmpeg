@@ -9,6 +9,7 @@
 [![minSdk](https://img.shields.io/badge/minSdk-24-success.svg)](#compatibility)
 [![Maven Central (6.0)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free?label=maven-central%206.0)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free)
 [![Maven Central (7.1)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free-71?label=maven-central%207.1)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free-71)
+[![Maven Central (8.1)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free-81?label=maven-central%208.1)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free-81)
 
 ## Why this fork exists
 
@@ -34,16 +35,17 @@ This fork is **Android-only, intentionally**. Maintaining a single platform well
 
 ## Quick start
 
-### Two LTS lines
+### Three LTS lines
 
-Two build trees are published and maintained in parallel — pick the FFmpeg version that suits your project:
+Three build trees are published and maintained in parallel — pick the FFmpeg version that suits your project:
 
 | Line | FFmpeg | Free tier (Maven Central) | Paid tiers (Gumroad) |
 |---|---|---|---|
 | **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2` | Basic / Full / Full GPL (Gumroad — coming soon) |
 
-Both lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
+All lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
 
 ### Add the Free tier
 
@@ -55,6 +57,9 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1'
 
 // 7.1 LTS
 implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5'
+
+// 8.1 LTS (FFmpeg 8.x "Hoare" — latest stable)
+implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2'
 ```
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
@@ -86,15 +91,16 @@ Migrating from `com.arthenica:ffmpeg-kit-*`? See [docs/MIGRATION.md](docs/MIGRAT
 
 ## Available tiers
 
-Four separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All four are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them. Each tier is built for both the **6.0 LTS** and **7.1 LTS** lines (see [Quick start](#quick-start)).
+Four separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All four are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them. Each tier is built for the **6.0 LTS**, **7.1 LTS**, and **8.1 LTS** lines (see [Quick start](#quick-start)).
 
 | | **Free** | **Basic** | **Full** | **Full GPL** |
 |---|---|---|---|---|
 | Distribution | Maven Central, free | Gumroad, $19 | Gumroad, $29 | Gumroad, $39 |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
-| Build workflows (6.0 / 7.1) | `build-free.yml` / `build-71-free.yml` | `build-basic.yml` / `build-71-basic.yml` | `build.yml` / `build-71-full.yml` | `build-gpl.yml` / `build-71-gpl.yml` |
+| Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
 | Maven coordinates (7.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | — | — | — |
+| Maven coordinates (8.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2` | — | — | — |
 | Android `MediaCodec` (hardware accel) | ❌ | ✅ | ✅ | ✅ |
 | H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
 | H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `openh264` | ✅ via `x264` |
@@ -116,7 +122,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
-**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free` (6.0 line) and `dev.ffmpegkit-maintained:ffmpeg-kit-free-71` (7.1 line); tag-triggered builds handle publishing automatically.
+**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free` (6.0 line), `dev.ffmpegkit-maintained:ffmpeg-kit-free-71` (7.1 line), and `dev.ffmpegkit-maintained:ffmpeg-kit-free-81` (8.1 line); tag-triggered builds handle publishing automatically.
 
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
