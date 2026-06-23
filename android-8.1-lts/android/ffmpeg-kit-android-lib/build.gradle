@@ -75,7 +75,7 @@ mavenPublishing {
 
     pom {
         name = "FFmpegKit 8.1 LTS (Free)"
-        description = "FFmpeg 8.1 LTS line - one of 4 tiers from the ffmpegkit-maintained FFmpegKit fork (Free-81/Basic-81/Full-81/Full GPL-81) - this is FREE: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Coexists with the 6.0 and 7.1 LTS lines - distinct artifact, does not replace them. Need H.264/H.265 encode, hardware codec access, TLS, OCR, Whisper transcription, subtitles or SRT? See the Basic-81/Full-81/Full GPL-81 tiers via the Project URL link below."
+        description = "FFmpegKit 8.1 LTS — Free tier (software-only: AV1/VP8/VP9/Opus/Vorbis/Speex). The paid tiers of this 8.1 line include Whisper.cpp v1.7.5 for on-device speech recognition: (1) automatic transcription in 99+ languages with SRT subtitle output, (2) auto-translation of any language to English — no API key, no internet, fully on-device. For H.264/H.265 encode, hardware MediaCodec, TLS, subtitles rendering, OCR, SRT streaming, or Whisper, see Basic-81/Full-81/Full-GPL-81 at the Project URL below."
         inceptionYear = "2026"
         // Points at the GitHub Release with the tier comparison table AND
         // direct Gumroad/Maven links together, not just the bare repo root

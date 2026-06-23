@@ -76,6 +76,8 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2'
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
 
+> **🎙️ Need automatic subtitles or speech recognition?** The 8.1 LTS paid tiers include **Whisper.cpp v1.7.5**: on-device transcription in 99+ languages and auto-translation to English — no API key, no internet, zero per-request cost. See the [Full tier ($34)](https://ffmpegkit.gumroad.com/l/sogbka) or [Full GPL tier ($49)](https://ffmpegkit.gumroad.com/l/axqjy).
+
 For the paid tiers, download the `.aar` from [Gumroad](https://ffmpegkit.gumroad.com) and drop it in `app/libs/`, then:
 
 ```gradle
