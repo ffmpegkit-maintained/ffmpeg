@@ -44,8 +44,25 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set ANDROID_HOME (not auto-configured on the ARM64 runner image)
-        run: echo "ANDROID_HOME=${ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+      # Neither ANDROID_HOME nor ANDROID_SDK_ROOT is set on this image
+      # (confirmed: the first attempt's ANDROID_SDK_ROOT was also empty,
+      # contrary to actions/runner-images#11460's suggested workaround).
+      # The x86_64 runner image's SDK lives at the conventional
+      # /usr/local/lib/android/sdk path (seen directly in the first
+      # attempt's adb path before this fix existed) - check whether the
+      # ARM64 image uses the same path, since the underlying images are
+      # built from the same actions/runner-images source with just the
+      # target arch changed.
+      - name: Locate the Android SDK and set ANDROID_HOME
+        run: |
+          if [[ -d /usr/local/lib/android/sdk ]]; then
+            echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+            echo "Found SDK at /usr/local/lib/android/sdk"
+          else
+            echo "::error::Android SDK not found at the expected path. Searching disk:"
+            find / -maxdepth 6 -iname "sdkmanager" 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
