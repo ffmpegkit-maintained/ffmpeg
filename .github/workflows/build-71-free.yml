@@ -202,7 +202,7 @@ jobs:
           VERSION="${VERSION%-free71}"
           RELEASE_TAG="v${VERSION}-lts-android"
           DEST="ffmpeg-kit-free71-${VERSION}-arm64-v8a.aar"
-          cp android-7.1-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar "$DEST"
+          cp prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar "$DEST"
           gh release upload "$RELEASE_TAG" "$DEST" --clobber --repo "$GITHUB_REPOSITORY"
 
       # Maven Central publishes are effectively permanent (you can't delete
