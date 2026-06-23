@@ -43,7 +43,7 @@ Three build trees are published and maintained in parallel — pick the FFmpeg v
 |---|---|---|---|
 | **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
-| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") + **Whisper.cpp v1.7.5** (on-device speech recognition & subtitles) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) / [Full $34](https://ffmpegkit.gumroad.com/l/sogbka) / [Full GPL $49](https://ffmpegkit.gumroad.com/l/axqjy) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") + **Whisper.cpp v1.7.5** (on-device speech recognition & subtitles) — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) / [Full $34](https://ffmpegkit.gumroad.com/l/sogbka) / [Full GPL $49](https://ffmpegkit.gumroad.com/l/axqjy) |
 
 All lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
 
@@ -70,8 +70,8 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1'
 // 7.1 LTS
 implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5'
 
-// 8.1 LTS (FFmpeg 8.x "Hoare" — latest stable)
-implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2'
+// 8.1 LTS (FFmpeg 8.x "Hoare" — latest stable, NDK r27c)
+implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4'
 ```
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
@@ -114,7 +114,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 | Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
 | Maven coordinates (7.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | — | — | — |
-| Maven coordinates (8.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2` | — | — | — |
+| Maven coordinates (8.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | — | — | — |
 | Android `MediaCodec` (hardware accel) | ❌ | ✅ | ✅ | ✅ |
 | H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
 | H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `openh264` | ✅ via `x264` |
@@ -136,7 +136,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
-**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free` (6.0 line), `dev.ffmpegkit-maintained:ffmpeg-kit-free-71` (7.1 line), and `dev.ffmpegkit-maintained:ffmpeg-kit-free-81` (8.1 line); tag-triggered builds handle publishing automatically.
+**Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` (6.0 line, NDK r26c), `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` (7.1 line, NDK r26c), and `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` (8.1 line, NDK r27c); tag-triggered builds handle publishing automatically.
 
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
@@ -146,15 +146,17 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 State of the `main` branch source (and of any `.aar` produced by the CI build going forward):
 
-| | Current |
-|---|---|
-| **NDK** | r26c (`26.2.11394342`) |
-| **minSdk** | 24 (Android 7.0) |
-| **compileSdk / targetSdk** | 35 (Android 15) |
-| **ABI** | `arm64-v8a` only — CI builds and publishes this ABI exclusively; other ABIs are buildable from source via `android.sh` but not published |
-| **16 KB page size alignment** | Enforced — native libraries are linked with `-Wl,-z,max-page-size=16384`, and the CI build fails if any `.so` isn't 16 KB-aligned (see the "Verify 16 KB page size alignment" step in [.github/workflows/build.yml](.github/workflows/build.yml)) |
+| | 6.0 LTS / 7.1 LTS | 8.1 LTS |
+|---|---|---|
+| **NDK** | r26c (`26.2.11394342`) | **r27c** (`27.2.12479018`) |
+| **minSdk** | 24 (Android 7.0) | 24 (Android 7.0) |
+| **compileSdk / targetSdk** | 35 (Android 15) | 35 (Android 15) |
+| **ABI** | `arm64-v8a` only | `arm64-v8a` only |
+| **16 KB page size alignment** | Enforced | Enforced |
 
-> Current releases ([v6.0.1-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android) and [v7.1.5-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v7.1.5-lts-android)) are fully up to date with this table — compileSdk 35, NDK r26c, and 16 KB alignment enforced.
+`arm64-v8a` is the only ABI CI builds and publishes; other ABIs are buildable from source via `android.sh` but not published. 16 KB alignment is enforced with `-Wl,-z,max-page-size=16384` — the CI build fails if any `.so` isn't aligned (see the "Verify 16 KB page size alignment" step in the relevant workflow).
+
+> Current releases: [v6.0.1-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android), [v7.1.5-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v7.1.5-lts-android), [v8.1.4-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v8.1.4-lts-android) — all fully up to date with this table.
 
 `android.sh` has no `audio`/`video`/`https` build presets (those were upstream's historical Maven Central artifact names, not flags this script understands) — this fork's tiers (Free/Basic/Full/Full GPL, see [README § Available tiers](#available-tiers)) are defined by which `--disable-lib-*`/`--enable-gpl` flags each workflow passes, not by upstream's old variant names.
 

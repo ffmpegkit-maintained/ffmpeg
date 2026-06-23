@@ -2,6 +2,17 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
+## v8.1.4-lts-android — 2026-06-23
+
+Rebuild of all four tiers with **NDK r27c** (`27.2.12479018` — current NDK LTS), the first 8.1 release to use the newer toolchain. Source identical to 8.1.2. Maven artifact for the Free tier: `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4`.
+
+- **NDK r26c → r27c** for the entire 8.1 line (all 4 tiers). The 6.0 and 7.1 lines remain on r26c.
+- Clang from NDK r27c (`clang-r510928`) replaces the r26c compiler across all 8.1 native builds.
+
+## v8.1.3-lts-android — 2026-06-23
+
+Accidental release: version bump targeting r27c but the CI workflow download URL was not yet updated at tag time, resulting in an r26c build. The Maven Central artifact `ffmpeg-kit-free-81:8.1.3` exists but is functionally identical to 8.1.2 (same NDK r26c). Superseded by 8.1.4. Paid tiers were never built as 8.1.3.
+
 ## v8.1.2-lts-android — 2026-06-23
 
 A third build tree, `android-8.1-lts/`, targeting FFmpeg `n8.1.2` (8.1 "Hoare" line, latest patch as of 2026-06-17). Same four-tier structure (Free/Basic/Full/Full GPL), same NDK r26c, same 16 KB page alignment. Free tier Maven artifact: `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.2`.
