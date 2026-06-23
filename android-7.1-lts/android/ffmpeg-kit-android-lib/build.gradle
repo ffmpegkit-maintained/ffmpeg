@@ -82,7 +82,7 @@ mavenPublishing {
         // - Maven Central renders this as an actual clickable "Project URL"
         // link (unlike the plain-text description field above, which
         // Central Portal does NOT linkify even when it contains a URL).
-        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v7.1.5-lts-android"
+        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases"
 
         licenses {
             license {
