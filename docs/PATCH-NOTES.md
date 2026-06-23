@@ -2,9 +2,11 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
-## In progress — FFmpeg 7.1.5 port (`android-7.1-lts/`, not yet released)
+## v7.1.5-lts-android — 2026-06-23
 
-A second build tree, `android-7.1-lts/`, coexists with the original `android-6.0-lts/` (moved there to make room — same Maven coordinates, same Gumroad products, no change for existing 6.x customers). Goal: validate the build infrastructure on an official LTS-adjacent FFmpeg release (`n7.1.5`) before attempting the much newer 8.1.2. Not yet wired into CI/Gumroad/Maven (that's the only remaining step) — currently verified by hand:
+A second build tree, `android-7.1-lts/`, coexists with the original `android-6.0-lts/`. Same four tiers (Free/Basic/Full/Full GPL), same NDK r26c, same 16 KB page size alignment — FFmpeg updated to `n7.1.5`. Free tier published on Maven Central as `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5`; paid tiers available on [Gumroad](https://ffmpegkit.gumroad.com).
+
+**Port findings** — all four tiers compiled cleanly against FFmpeg `n7.1.5` with only two generic fixes needed:
 
 - All four tiers (Free/Basic/Full/Full GPL) **compile cleanly** against FFmpeg `n7.1.5`, with only two generic fixes needed, neither library-specific:
   - `scripts/android/ffmpeg.sh`: `emms.h` moved from `libavutil/x86/emms.h` to `libavutil/emms.h` upstream between 6.0 and 7.1 — updated the path our script manually copies it from/to.
