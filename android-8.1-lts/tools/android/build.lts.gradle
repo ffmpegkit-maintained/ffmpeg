@@ -47,7 +47,7 @@ android {
 // See the matching comment in tools/android/build.gradle - same
 // vanniktech-auto-configures-singleVariant reasoning applies here.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-81", "8.1.3")
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-81", "8.1.4")
 
     signAllPublications()
     publishToMavenCentral(true)
