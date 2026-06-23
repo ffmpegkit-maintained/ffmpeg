@@ -1,0 +1,104 @@
+name: Port 7.1 - Smoke test (diagnostic, manual only)
+
+# Runs the real 3-part instrumented smoke test (SmokeTest.java) against the
+# Free tier - the actual point of building the 7.1.5 port, not just
+# confirming it compiles (port-71-free.yml only does that). GitHub's free
+# ARM64 hosted runners don't have /dev/kvm, so an arm64-v8a Android
+# emulator can't be hardware-accelerated there; this runs it unaccelerated
+# (QEMU software emulation) on a normal x86_64 runner instead, per the
+# user's explicit choice over the alternatives (manual local testing, or
+# skipping the smoke test for now). Expect a slow boot - that's inherent
+# to unaccelerated ARM-on-x86 emulation, not a bug. Delete once the port
+# is done and folded into a real CI workflow.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Smoke test - 7.1 free (arm64-v8a emulator, unaccelerated)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: android-7.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config curl git \
+            build-essential yasm nasm gperf texinfo bison ragel \
+            python3 python3-pip unzip zip wget meson ninja-build \
+            doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
+
+      - name: Install Android platform 35
+        run: |
+          set +o pipefail
+          yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          set -o pipefail
+          "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+
+      - name: Cache Android NDK r26c
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ~/.ndk
+          key: ndk-r26c-linux
+
+      - name: Download Android NDK r26c
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          curl -s "https://dl.google.com/android/repository/android-ndk-r26c-linux.zip" -o ndk.zip
+          unzip -q -o ndk.zip -d "${HOME}/.ndk"
+
+      - name: Export ANDROID_NDK_ROOT
+        run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
+
+      - name: Build free variant (arm64-v8a only) - already confirmed green
+        run: |
+          touch build.log
+          set +e
+          ./android.sh \
+            --enable-libaom --enable-dav1d --enable-libvpx \
+            --enable-opus --enable-libvorbis --enable-speex \
+            --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+          echo "BUILD_EXIT=$?" >> "$GITHUB_ENV"
+
+      - name: Print build log on failure
+        if: failure()
+        run: cat build.log || echo "no build.log produced"
+
+      - name: Fail fast if the library build itself failed (no point booting an emulator)
+        run: '[[ "${BUILD_EXIT}" == "0" ]] || exit 1'
+
+      # No hardware acceleration available (confirmed: GitHub's free ARM64
+      # runners lack /dev/kvm, and this is an x86_64 runner running an
+      # arm64-v8a guest, so KVM wouldn't apply even if present) - expect a
+      # slow boot. emulator-options below disable everything non-essential
+      # to minimize what unaccelerated QEMU has to render/process.
+      - name: Run instrumented smoke test on an arm64-v8a emulator (unaccelerated)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: default
+          arch: arm64-v8a
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: android-7.1/android
+          script: ./gradlew :ffmpeg-kit-android-lib:connectedDebugAndroidTest --info
