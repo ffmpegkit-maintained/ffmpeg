@@ -190,6 +190,20 @@ jobs:
           name: ffmpeg-kit-71-free-arm64-v8a
           path: android-7.1-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
 
+      # Attach the AAR to the corresponding vX.Y.Z-lts-android GitHub release.
+      # Tag format: v7.1.5-free71 → strip prefix/suffix → 7.1.5 → v7.1.5-lts-android.
+      - name: Upload AAR to GitHub release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${VERSION%-free71}"
+          RELEASE_TAG="v${VERSION}-lts-android"
+          DEST="ffmpeg-kit-free71-${VERSION}-arm64-v8a.aar"
+          cp android-7.1-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar "$DEST"
+          gh release upload "$RELEASE_TAG" "$DEST" --clobber --repo "$GITHUB_REPOSITORY"
+
       # Maven Central publishes are effectively permanent (you can't delete
       # a released version, only release a new one) - only do this on an
       # actual "v*-free71" tag push, never on a manual workflow_dispatch
