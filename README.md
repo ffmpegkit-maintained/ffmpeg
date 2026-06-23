@@ -7,7 +7,7 @@
 [![Latest release](https://img.shields.io/github/v/release/ffmpegkit-maintained/ffmpeg-kit?label=release)](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases)
 [![NDK](https://img.shields.io/badge/NDK-r26c-success.svg)](docs/BUILD.md)
 [![minSdk](https://img.shields.io/badge/minSdk-24-success.svg)](#compatibility)
-[![Maven Central](https://img.shields.io/badge/maven--central-coming%20soon-orange.svg)](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases)
+[![Maven Central](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-android-free?label=maven-central)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-android-free)
 
 ## Why this fork exists
 
