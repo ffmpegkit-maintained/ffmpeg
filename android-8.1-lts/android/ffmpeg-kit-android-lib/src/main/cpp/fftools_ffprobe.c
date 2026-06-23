@@ -2268,14 +2268,15 @@ static void print_dynamic_hdr_vivid(WriterContext *w, const AVDynamicHDRVivid *m
                 print_int("3Spline_enable_flag", tm_params->three_Spline_enable_flag);
                 if (tm_params->three_Spline_enable_flag) {
                     print_int("3Spline_num", tm_params->three_Spline_num);
-                    print_int("3Spline_TH_mode", tm_params->three_Spline_TH_mode);
 
                     for (int j = 0; j < tm_params->three_Spline_num; j++) {
-                        print_q("3Spline_TH_enable_MB", tm_params->three_Spline_TH_enable_MB, '/');
-                        print_q("3Spline_TH_enable", tm_params->three_Spline_TH_enable, '/');
-                        print_q("3Spline_TH_Delta1", tm_params->three_Spline_TH_Delta1, '/');
-                        print_q("3Spline_TH_Delta2", tm_params->three_Spline_TH_Delta2, '/');
-                        print_q("3Spline_enable_Strength", tm_params->three_Spline_enable_Strength, '/');
+                        const AVHDRVivid3SplineParams *sp = &tm_params->three_Spline[j];
+                        print_int("3Spline_TH_mode", sp->th_mode);
+                        print_q("3Spline_TH_enable_MB", sp->th_enable_mb, '/');
+                        print_q("3Spline_TH_enable", sp->th_enable, '/');
+                        print_q("3Spline_TH_Delta1", sp->th_delta1, '/');
+                        print_q("3Spline_TH_Delta2", sp->th_delta2, '/');
+                        print_q("3Spline_enable_Strength", sp->enable_strength, '/');
                     }
                 }
             }
@@ -2604,7 +2605,7 @@ static void show_frame(WriterContext *w, AVFrame *frame, AVStream *stream,
     if (s) print_str    ("media_type", s);
     else   print_str_opt("media_type", "unknown");
     print_int("stream_index",           stream->index);
-    print_int("key_frame",              frame->key_frame);
+    print_int("key_frame",              !!(frame->flags & AV_FRAME_FLAG_KEY));
     print_ts  ("pts",                   frame->pts);
     print_time("pts_time",              frame->pts, &stream->time_base);
     print_ts  ("pkt_dts",               frame->pkt_dts);
@@ -2619,10 +2620,8 @@ static void show_frame(WriterContext *w, AVFrame *frame, AVStream *stream,
 #endif
     print_duration_ts  ("duration",          frame->duration);
     print_duration_time("duration_time",     frame->duration, &stream->time_base);
-    if (frame->pkt_pos != -1) print_fmt    ("pkt_pos", "%"PRId64, frame->pkt_pos);
-    else                      print_str_opt("pkt_pos", "N/A");
-    if (frame->pkt_size != -1) print_val    ("pkt_size", frame->pkt_size, unit_byte_str);
-    else                       print_str_opt("pkt_size", "N/A");
+    print_str_opt("pkt_pos", "N/A");
+    print_str_opt("pkt_size", "N/A");
 
     switch (stream->codecpar->codec_type) {
         AVRational sar;
@@ -2646,8 +2645,8 @@ static void show_frame(WriterContext *w, AVFrame *frame, AVStream *stream,
         print_int("display_picture_number", frame->display_picture_number);
     )
 #endif
-        print_int("interlaced_frame",       frame->interlaced_frame);
-        print_int("top_field_first",        frame->top_field_first);
+        print_int("interlaced_frame",       !!(frame->flags & AV_FRAME_FLAG_INTERLACED));
+        print_int("top_field_first",        !!(frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST));
         print_int("repeat_pict",            frame->repeat_pict);
 
         print_color_range(w, frame->color_range);
@@ -3017,7 +3016,7 @@ static int show_stream(WriterContext *w, AVFormatContext *fmt_ctx, int stream_id
     if (!do_bitexact && (profile = avcodec_profile_name(par->codec_id, par->profile)))
         print_str("profile", profile);
     else {
-        if (par->profile != FF_PROFILE_UNKNOWN) {
+        if (par->profile != AV_PROFILE_UNKNOWN) {
             char profile_num[12];
             snprintf(profile_num, sizeof(profile_num), "%d", par->profile);
             print_str("profile", profile_num);
@@ -3190,8 +3189,8 @@ static int show_stream(WriterContext *w, AVFormatContext *fmt_ctx, int stream_id
     if (do_show_stream_tags)
         ret = show_tags(w, stream->metadata, in_program ? SECTION_ID_PROGRAM_STREAM_TAGS : SECTION_ID_STREAM_TAGS);
 
-    if (stream->nb_side_data) {
-        print_pkt_side_data(w, stream->codecpar, stream->side_data, stream->nb_side_data,
+    if (stream->codecpar->nb_coded_side_data) {
+        print_pkt_side_data(w, stream->codecpar, stream->codecpar->coded_side_data, stream->codecpar->nb_coded_side_data,
                             SECTION_ID_STREAM_SIDE_DATA_LIST,
                             SECTION_ID_STREAM_SIDE_DATA);
     }
