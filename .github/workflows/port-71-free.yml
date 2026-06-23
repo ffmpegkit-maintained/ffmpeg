@@ -90,3 +90,13 @@ jobs:
       - name: Fail the job if the build actually failed
         if: always()
         run: '[[ "${BUILD_EXIT}" == "0" ]] || exit 1'
+
+      # Free tier only (no licensing/exposure concern, unlike the paid
+      # tiers) - lets the local smoke-test app (see CLAUDE.md) pull down a
+      # real 7.1.5 AAR to embed instead of needing a Linux build toolchain
+      # on the Windows machine running that test.
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-kit-free-71-arm64-v8a
+          path: android-7.1/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
