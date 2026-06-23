@@ -19,7 +19,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: android-7.1
+        working-directory: android-7.1-lts
 
     steps:
       - name: Checkout
@@ -99,4 +99,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-kit-free-71-arm64-v8a
-          path: android-7.1/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
+          path: android-7.1-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar

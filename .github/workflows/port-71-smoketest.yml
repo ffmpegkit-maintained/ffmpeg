@@ -36,7 +36,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: android-7.1
+        working-directory: android-7.1-lts
 
     steps:
       - name: Checkout
@@ -134,5 +134,5 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          working-directory: android-7.1/android
+          working-directory: android-7.1-lts/android
           script: ./gradlew :ffmpeg-kit-android-lib:connectedDebugAndroidTest --info
