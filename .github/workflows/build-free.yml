@@ -218,4 +218,14 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: "15567C31"
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral --no-configuration-cache
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${VERSION%-free}"
+          GROUP="dev.ffmpegkit-maintained"
+          ARTIFACT="ffmpeg-kit-free"
+          POM_URL="https://repo1.maven.org/maven2/${GROUP//.//}/${ARTIFACT}/${VERSION}/${ARTIFACT}-${VERSION}.pom"
+          if curl -sf "$POM_URL" > /dev/null 2>&1; then
+            echo "Version ${VERSION} already on Maven Central — skipping publish."
+          else
+            ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral --no-configuration-cache
+          fi

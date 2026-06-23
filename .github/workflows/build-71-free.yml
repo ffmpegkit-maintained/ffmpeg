@@ -208,7 +208,8 @@ jobs:
       # Maven Central publishes are effectively permanent (you can't delete
       # a released version, only release a new one) - only do this on an
       # actual "v*-free71" tag push, never on a manual workflow_dispatch
-      # test run.
+      # test run. Skip silently if the version is already published (safe
+      # to re-push the tag without duplicating the release).
       - name: Publish to Maven Central (tag pushes only)
         if: startsWith(github.ref, 'refs/tags/')
         working-directory: android-7.1-lts/android
@@ -218,4 +219,14 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: "15567C31"
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
-        run: ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral --no-configuration-cache
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${VERSION%-free71}"
+          GROUP="dev.ffmpegkit-maintained"
+          ARTIFACT="ffmpeg-kit-free-71"
+          POM_URL="https://repo1.maven.org/maven2/${GROUP//.//}/${ARTIFACT}/${VERSION}/${ARTIFACT}-${VERSION}.pom"
+          if curl -sf "$POM_URL" > /dev/null 2>&1; then
+            echo "Version ${VERSION} already on Maven Central — skipping publish."
+          else
+            ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral --no-configuration-cache
+          fi
