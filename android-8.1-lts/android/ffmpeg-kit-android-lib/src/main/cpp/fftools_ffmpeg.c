@@ -3467,10 +3467,13 @@ static int init_output_stream(OutputStream *ost, AVFrame *frame,
                 const AVPacketSideData *sd_src = &ost->enc_ctx->coded_side_data[i];
                 uint8_t *dst_data;
 
-                dst_data = av_stream_new_side_data(ost->st, sd_src->type, sd_src->size);
-                if (!dst_data)
+                AVPacketSideData *sd_dst2 = av_packet_side_data_new(
+                    &ost->st->codecpar->coded_side_data,
+                    &ost->st->codecpar->nb_coded_side_data,
+                    sd_src->type, sd_src->size, 0);
+                if (!sd_dst2)
                     return AVERROR(ENOMEM);
-                memcpy(dst_data, sd_src->data, sd_src->size);
+                memcpy(sd_dst2->data, sd_src->data, sd_src->size);
             }
         }
 
@@ -3483,15 +3486,18 @@ static int init_output_stream(OutputStream *ost, AVFrame *frame,
          */
         if (ist) {
             int i;
-            for (i = 0; i < ist->st->nb_side_data; i++) {
-                AVPacketSideData *sd = &ist->st->side_data[i];
+            for (i = 0; i < ist->st->codecpar->nb_coded_side_data; i++) {
+                AVPacketSideData *sd = &ist->st->codecpar->coded_side_data[i];
                 if (sd->type != AV_PKT_DATA_CPB_PROPERTIES) {
-                    uint8_t *dst = av_stream_new_side_data(ost->st, sd->type, sd->size);
-                    if (!dst)
+                    AVPacketSideData *sd_dst3 = av_packet_side_data_new(
+                        &ost->st->codecpar->coded_side_data,
+                        &ost->st->codecpar->nb_coded_side_data,
+                        sd->type, sd->size, 0);
+                    if (!sd_dst3)
                         return AVERROR(ENOMEM);
-                    memcpy(dst, sd->data, sd->size);
+                    memcpy(sd_dst3->data, sd->data, sd->size);
                     if (ist->autorotate && sd->type == AV_PKT_DATA_DISPLAYMATRIX)
-                        av_display_rotation_set((int32_t *)dst, 0);
+                        av_display_rotation_set((int32_t *)sd_dst3->data, 0);
                 }
             }
         }
@@ -4023,8 +4029,8 @@ static int process_input(int file_index)
 
     /* add the stream-global side data to the first packet */
     if (ist->nb_packets == 1) {
-        for (i = 0; i < ist->st->nb_side_data; i++) {
-            AVPacketSideData *src_sd = &ist->st->side_data[i];
+        for (i = 0; i < ist->st->codecpar->nb_coded_side_data; i++) {
+            AVPacketSideData *src_sd = &ist->st->codecpar->coded_side_data[i];
             uint8_t *dst_data;
 
             if (src_sd->type == AV_PKT_DATA_DISPLAYMATRIX)
