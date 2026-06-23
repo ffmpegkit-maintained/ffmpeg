@@ -30,6 +30,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: android-6.0-lts
 
     steps:
       - name: Checkout
@@ -81,9 +82,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            prebuilt
-            src
-          key: ffmpeg-kit-build-free-${{ hashFiles('android.sh', 'scripts/**') }}
+            android-6.0-lts/prebuilt
+            android-6.0-lts/src
+          key: ffmpeg-kit-build-free-${{ hashFiles('android-6.0-lts/android.sh', 'android-6.0-lts/scripts/**') }}
 
       - name: Restore latest build checkpoint from ci-cache-free branch
         run: |
@@ -190,7 +191,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-kit-free-arm64-v8a
-          path: prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
+          path: android-6.0-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
 
       # Maven Central publishes are effectively permanent (you can't delete
       # a released version, only release a new one) - only do this on an
@@ -199,7 +200,7 @@ jobs:
       # place, so this reuses that same build instead of recompiling.
       - name: Publish to Maven Central (tag pushes only)
         if: startsWith(github.ref, 'refs/tags/')
-        working-directory: android
+        working-directory: android-6.0-lts/android
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}

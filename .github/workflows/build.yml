@@ -28,6 +28,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: android-6.0-lts
 
     steps:
       - name: Checkout
@@ -84,9 +85,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            prebuilt
-            src
-          key: ffmpeg-kit-build-${{ hashFiles('android.sh', 'scripts/**') }}
+            android-6.0-lts/prebuilt
+            android-6.0-lts/src
+          key: ffmpeg-kit-build-${{ hashFiles('android-6.0-lts/android.sh', 'android-6.0-lts/scripts/**') }}
 
       # Belt-and-suspenders on top of the cache above: a git branch as a
       # second checkpoint store, since a `git push` that already succeeded

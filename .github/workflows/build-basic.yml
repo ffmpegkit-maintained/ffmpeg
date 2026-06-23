@@ -25,6 +25,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: android-6.0-lts
 
     steps:
       - name: Checkout
@@ -77,9 +78,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            prebuilt
-            src
-          key: ffmpeg-kit-build-basic-${{ hashFiles('android.sh', 'scripts/**') }}
+            android-6.0-lts/prebuilt
+            android-6.0-lts/src
+          key: ffmpeg-kit-build-basic-${{ hashFiles('android-6.0-lts/android.sh', 'android-6.0-lts/scripts/**') }}
 
       # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
       # not a branch on this repo - this repo is public, and a branch here
