@@ -15,6 +15,7 @@ android {
         versionName "6.0"
         project.archivesBaseName = "ffmpeg-kit"
         consumerProguardFiles "consumer-rules.pro"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -109,4 +110,9 @@ dependencies {
     api 'com.arthenica:smart-exception-java:0.2.1'
     testImplementation "androidx.test.ext:junit:1.1.5"
     testImplementation 'org.json:json:20230618'
+    // Instrumented smoke test (src/androidTest) - runs real native code on
+    // a device/emulator, unlike the JVM unit tests above which run with
+    // enable.ffmpeg.kit.test.mode=true and never touch libffmpegkit.so.
+    androidTestImplementation "androidx.test.ext:junit:1.1.5"
+    androidTestImplementation "androidx.test:runner:1.5.2"
 }
