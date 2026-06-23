@@ -8,10 +8,36 @@ A third build tree, `android-8.1-lts/`, targeting FFmpeg `n8.1.2` (8.1 "Hoare" l
 
 **New in this line vs 7.1:**
 - FFmpeg `n8.1.2` — latest stable in the 8.x line
-- **Whisper (OpenAI speech recognition filter)** planned for Full and Full GPL tiers — requires a new `scripts/android/whisper.sh` build script (in progress)
+- **Whisper.cpp v1.7.5** (ggml-org/whisper.cpp) integrated as library index 92 in the Full and Full GPL tiers — new `scripts/android/whisper.sh` build script, cmake-based, static, with `WHISPER_BUILD_TESTS/EXAMPLES/SERVER=OFF`
 - Vulkan video codec acceleration improvements (H.264, AV1, ProRes) from upstream 8.x
 
-**Port status:** directory structure and all 4 CI workflows created (`build-81-*.yml`). Whisper library build script pending. Will be released as `v8.1.2-lts-android` once all four tiers build green.
+**Port status:** Free tier CI currently building green (in progress). All 4 workflows created and wired. Will be released as `v8.1.2-lts-android` once all four tiers build green.
+
+**FFmpeg 8.x breaking API changes found during port** — all documented in `doc/APIchanges` in the FFmpeg source tree. Changes were required in our copies of `fftools_ffmpeg.c` and `fftools_ffprobe.c` (these are frozen snapshots of FFmpeg's internal CLI tool source, carried in the repo since 6.0 and only updated when a new FFmpeg version removes the fields they use):
+
+- **`--disable-postproc` configure flag removed** — `libpostproc` was removed from FFmpeg 8.0 entirely. Dropping the flag from `scripts/android/ffmpeg.sh` (and the unused `linux/` and `apple/` variants for consistency).
+
+- **`AVFrame.key_frame` removed** (deprecated since FFmpeg 6.1) — use `!!(frame->flags & AV_FRAME_FLAG_KEY)`. Affected: `fftools_ffmpeg.c` (4 sites), `fftools_ffprobe.c` (1 site).
+
+- **`AVFrame.interlaced_frame` removed** (deprecated since FFmpeg 6.1) — use `!!(frame->flags & AV_FRAME_FLAG_INTERLACED)`. Affected: `fftools_ffmpeg.c` (1 site), `fftools_ffprobe.c` (1 site).
+
+- **`AVFrame.top_field_first` removed** (deprecated since FFmpeg 6.1) — reading: `!!(frame->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST)`; writing: `frame->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST` or `&= ~AV_FRAME_FLAG_TOP_FIELD_FIRST`. Affected: `fftools_ffmpeg.c` (3 read sites, 1 write site), `fftools_ffprobe.c` (1 read site).
+
+- **`AVCodecContext.ticks_per_frame` removed** — was used in two duration-calculation expressions. In the general case (non-interlaced), effectively cancelled out (same value in numerator and denominator), replaced with `1`. Affected: `fftools_ffmpeg.c` (4 sites in 2 identical blocks).
+
+- **`AVStream.nb_side_data` / `AVStream.side_data` removed** — stream-level packet side data moved to `AVStream.codecpar->coded_side_data` / `nb_coded_side_data`. **`av_stream_new_side_data()` also removed**, replaced by `av_packet_side_data_new(&codecpar->coded_side_data, &codecpar->nb_coded_side_data, type, size, 0)` (available since FFmpeg 7.0). Affected: `fftools_ffmpeg.c` (3 blocks, 5 sites total), `fftools_ffprobe.c` (1 block).
+
+- **`AVFrame.pkt_pos` / `AVFrame.pkt_size` removed** — were used in ffprobe's frame output to print the originating packet's byte position and size. No equivalent exists on `AVFrame` in FFmpeg 8.x (this information is now only available at demux time on `AVPacket`). Replaced with `print_str_opt("pkt_pos", "N/A")` / `print_str_opt("pkt_size", "N/A")` — these fields will show as N/A in ffprobe output for frames decoded with this build. Affected: `fftools_ffprobe.c` (2 sites).
+
+- **`FF_PROFILE_UNKNOWN` renamed to `AV_PROFILE_UNKNOWN`** — part of a broader `FF_PROFILE_*` → `AV_PROFILE_*` rename in FFmpeg 8.0. Affected: `fftools_ffprobe.c` (1 site).
+
+- **`AVHDRVividColorToneMappingParams` three-spline fields restructured** — the individual spline parameters (`three_Spline_TH_mode`, `three_Spline_TH_enable_MB`, `three_Spline_TH_enable`, `three_Spline_TH_Delta1`, `three_Spline_TH_Delta2`, `three_Spline_enable_Strength`) were direct fields on the parent struct in FFmpeg 7.x. In FFmpeg 8.x they are now per-element fields (`th_mode`, `th_enable_mb`, `th_enable`, `th_delta1`, `th_delta2`, `enable_strength`) inside the new `AVHDRVivid3SplineParams` sub-struct, accessible via `tm_params->three_spline[j]` (note also: lowercase `s` in the array field name). Affected: `fftools_ffprobe.c` (1 block).
+
+**Other port fixes (non-API):**
+
+- **`--disable-postproc` configure abort** — this was the first build failure: FFmpeg configure exits immediately with "Unknown option" for any unrecognised flag, so this single stale flag blocked the entire FFmpeg compile step.
+- **`src/main/cpp/` directory missing from git** — the JNI source tree (`ffmpegkit.c`, `fftools_*.c/h`, `AndroidManifest.xml`, all Java sources) was not included when the `android-8.1-lts/` directory was initially set up. Copied from `android-7.1-lts/`, which carries the same codebase.
+- **All `.sh` scripts missing execute bit** — the entire `android-8.1-lts/scripts/` tree was added to git with mode `100644` instead of `100755`, causing `android.sh` to fail with "Permission denied" (exit 126) before any build work started. Fixed with `git update-index --chmod=+x` on all `.sh` files.
 
 ## v7.1.5-lts-android — 2026-06-23
 
