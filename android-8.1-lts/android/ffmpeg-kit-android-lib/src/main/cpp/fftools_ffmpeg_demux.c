@@ -591,10 +591,16 @@ static void add_display_matrix_to_stream(const OptionsContext *o,
     if (!rotation_set && !hflip_set && !vflip_set)
         return;
 
-    buf = (int32_t *)av_stream_new_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, sizeof(int32_t) * 9);
-    if (!buf) {
-        av_log(NULL, AV_LOG_FATAL, "Failed to generate a display matrix!\n");
-        exit_program(1);
+    {
+        AVPacketSideData *_sd = av_packet_side_data_new(&st->codecpar->coded_side_data,
+                                                        &st->codecpar->nb_coded_side_data,
+                                                        AV_PKT_DATA_DISPLAYMATRIX,
+                                                        sizeof(int32_t) * 9, 0);
+        if (!_sd) {
+            av_log(NULL, AV_LOG_FATAL, "Failed to generate a display matrix!\n");
+            exit_program(1);
+        }
+        buf = (int32_t *)_sd->data;
     }
 
     av_display_rotation_set(buf,
