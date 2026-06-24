@@ -148,7 +148,7 @@ ifeq ($(WHISPER_LIB_EXISTS),yes)
     LOCAL_SRC_FILES := whisperkitjni.c
     LOCAL_C_INCLUDES := $(WHISPER_PREBUILT_INC_DIR)
     LOCAL_CFLAGS := -Wall -Wno-unused-parameter
-    LOCAL_LDLIBS := -llog -lm -landroid
+    LOCAL_LDLIBS := -llog -lm -landroid -lc++_shared
     LOCAL_LDFLAGS := -Wl,--start-group $(WHISPER_ALL_STATIC_LIBS) -Wl,--end-group
     LOCAL_ARM_NEON := ${MY_ARM_NEON}
     include $(BUILD_SHARED_LIBRARY)
