@@ -9,7 +9,6 @@
 
 WhisperKit brings on-device speech recognition to Android via a clean Java API layered on top of [Whisper.cpp](https://github.com/ggml-org/whisper.cpp). It processes audio locally — **no audio ever leaves the device**, no API key required for transcription, and it works fully offline.
 
-> **This pipeline is proven.** [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit), one of the most widely-used open-source subtitle editors (desktop), uses the exact same architecture: Whisper for transcription, then DeepL or Google Translate for translation, as a separate pipeline from FFmpeg. WhisperKit brings that same workflow to Android in a single library.
 
 Key capabilities:
 
@@ -196,15 +195,7 @@ TranslationProvider google = (text, targetLang) -> {
 
 ## Burn subtitles into the video (the complete pipeline)
 
-The Python reference pipeline for desktop is:
-
-```python
-# Transcribe + translate with Whisper CLI, then burn subtitles with FFmpeg
-whisper video.mp4 --task translate --language fr --output_format srt
-ffmpeg -i video.mp4 -vf subtitles=video.srt final.mp4
-```
-
-With FFmpegKit 8.1 Full (or Full GPL), the same end-to-end pipeline runs entirely on Android:
+With FFmpegKit 8.1 Full (or Full GPL), you can run the complete transcription → translation → subtitle-burning pipeline entirely on Android:
 
 ```java
 String videoPath  = "/path/to/video.mp4";

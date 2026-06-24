@@ -166,7 +166,7 @@ try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
 
 ### Burn subtitles into the video
 
-The same pipeline that makes [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit) popular on desktop — Whisper transcription → translation → subtitle burning — runs entirely on Android with FFmpegKit 8.1 Full:
+Transcription, translation, and subtitle burning in a single Android pipeline — entirely on-device for the transcription step, with an optional translation service for any target language:
 
 ```java
 // 1. Extract PCM  →  2. WhisperKit → SRT  →  3. FFmpegKit burns subtitles
