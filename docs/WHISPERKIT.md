@@ -9,6 +9,8 @@
 
 WhisperKit brings on-device speech recognition to Android via a clean Java API layered on top of [Whisper.cpp](https://github.com/ggml-org/whisper.cpp). It processes audio locally — **no audio ever leaves the device**, no API key required for transcription, and it works fully offline.
 
+> **This pipeline is proven.** [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit), one of the most widely-used open-source subtitle editors (desktop), uses the exact same architecture: Whisper for transcription, then DeepL or Google Translate for translation, as a separate pipeline from FFmpeg. WhisperKit brings that same workflow to Android in a single library.
+
 Key capabilities:
 
 | Feature | API method |
@@ -144,6 +146,19 @@ try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
 
 `DeepLTranslationProvider` auto-selects the Free API endpoint (`api-free.deepl.com`) when the key ends in `:fx`, and the paid endpoint otherwise.
 
+### Google Translate (Cloud Translation API)
+
+First 500 000 characters/month are free. [Get an API key](https://console.cloud.google.com) (enable "Cloud Translation API" for your project).
+
+```java
+TranslationProvider google = new GoogleTranslateProvider("YOUR_GOOGLE_API_KEY");
+
+try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
+    String japaneseText = wk.transcribeAndTranslate(pcm, google, "ja");
+    String chineseSrt   = wk.transcribeToSrtAndTranslate(pcm, google, "zh-CN");
+}
+```
+
 ### LibreTranslate (open-source, self-hostable)
 
 [LibreTranslate](https://github.com/LibreTranslate/LibreTranslate) is a free, open-source translation server you can run yourself — no vendor lock-in, no per-character costs.
@@ -176,6 +191,73 @@ TranslationProvider google = (text, targetLang) -> {
     return translatedText;
 };
 ```
+
+---
+
+## Burn subtitles into the video (the complete pipeline)
+
+The Python reference pipeline for desktop is:
+
+```python
+# Transcribe + translate with Whisper CLI, then burn subtitles with FFmpeg
+whisper video.mp4 --task translate --language fr --output_format srt
+ffmpeg -i video.mp4 -vf subtitles=video.srt final.mp4
+```
+
+With FFmpegKit 8.1 Full (or Full GPL), the same end-to-end pipeline runs entirely on Android:
+
+```java
+String videoPath  = "/path/to/video.mp4";
+String pcmPath    = context.getCacheDir() + "/audio.pcm";
+String srtPath    = context.getCacheDir() + "/subtitles.srt";
+String outputPath = context.getCacheDir() + "/final.mp4";
+String modelPath  = context.getFilesDir() + "/ggml-base.bin";
+
+// Step 1: extract audio as 16 kHz mono f32 PCM
+FFmpegKit.executeAsync(
+    "-i " + videoPath + " -ar 16000 -ac 1 -f f32le " + pcmPath,
+    session -> {
+        if (!ReturnCode.isSuccess(session.getReturnCode())) return;
+        try {
+            // Step 2: load PCM and transcribe → SRT
+            byte[] bytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(pcmPath));
+            java.nio.FloatBuffer fb = java.nio.ByteBuffer.wrap(bytes)
+                .order(java.nio.ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
+            float[] pcm = new float[fb.remaining()];
+            fb.get(pcm);
+
+            String srt;
+            try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
+                // Option A — translate to English (offline, no API key)
+                srt = wk.translateToSrt(pcm);
+
+                // Option B — translate to any language via DeepL
+                // TranslationProvider deepl = new DeepLTranslationProvider("YOUR_KEY");
+                // srt = wk.transcribeToSrtAndTranslate(pcm, deepl, "FR");
+            }
+
+            // Step 3: write SRT to disk
+            java.nio.file.Files.write(java.nio.file.Paths.get(srtPath),
+                srt.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+            // Step 4: burn subtitles into the video (requires Full / Full GPL tier for libass)
+            FFmpegKit.executeAsync(
+                "-i " + videoPath + " -vf subtitles=" + srtPath + " " + outputPath,
+                burnSession -> {
+                    if (ReturnCode.isSuccess(burnSession.getReturnCode())) {
+                        Log.i("WhisperKit", "Done: " + outputPath);
+                    }
+                }
+            );
+
+        } catch (IOException e) {
+            Log.e("WhisperKit", "Pipeline failed", e);
+        }
+    }
+);
+```
+
+> **Subtitle burning requires the Full or Full GPL tier** — the `subtitles` FFmpeg filter uses `libass`, which is only included in those two tiers. The `translate` step (Whisper built-in or TranslationProvider) is independent of this.
 
 ---
 

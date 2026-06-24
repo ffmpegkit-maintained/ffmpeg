@@ -164,7 +164,20 @@ try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
 
 `TranslationProvider` is also a plain functional interface — implement it inline for Google Translate, Azure, or any other service.
 
-> Full documentation, model download links, and a complete end-to-end example are in [docs/WHISPERKIT.md](docs/WHISPERKIT.md).
+### Burn subtitles into the video
+
+The same pipeline that makes [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit) popular on desktop — Whisper transcription → translation → subtitle burning — runs entirely on Android with FFmpegKit 8.1 Full:
+
+```java
+// 1. Extract PCM  →  2. WhisperKit → SRT  →  3. FFmpegKit burns subtitles
+FFmpegKit.executeAsync("-i " + videoPath + " -ar 16000 -ac 1 -f f32le " + pcmPath, s1 -> {
+    // ... load PCM, call wk.translateToSrt(pcm) or transcribeToSrtAndTranslate ...
+    // write SRT to srtPath, then:
+    FFmpegKit.executeAsync("-i " + videoPath + " -vf subtitles=" + srtPath + " " + outputPath, s2 -> {});
+});
+```
+
+> **Note:** subtitle burning (`-vf subtitles=`) requires `libass`, which is in the Full and Full GPL tiers. See [docs/WHISPERKIT.md](docs/WHISPERKIT.md) for the complete working code.
 
 ## Available tiers
 
