@@ -68,7 +68,7 @@ android {
 // files on Gumroad, not via this task, so this block being present is
 // harmless for them.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-71", "7.1.5")
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-71", "7.1.6")
 
     signAllPublications()
     publishToMavenCentral(true)
