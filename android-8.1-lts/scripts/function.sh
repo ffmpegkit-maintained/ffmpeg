@@ -2057,7 +2057,7 @@ downloaded_library_sources() {
     exit 1
   fi
 
-  for library in {1..50}; do
+  for library in {1..50} 93; do
     if [[ ${!library} -eq 1 ]]; then
       library_name=$(get_library_name $((library - 1)))
 
