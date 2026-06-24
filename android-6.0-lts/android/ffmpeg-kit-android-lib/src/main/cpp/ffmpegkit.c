@@ -860,8 +860,9 @@ JNIEXPORT void JNICALL Java_com_arthenica_ffmpegkit_FFmpegKitConfig_nativeFFmpeg
  */
 JNIEXPORT int JNICALL Java_com_arthenica_ffmpegkit_FFmpegKitConfig_registerNewNativeFFmpegPipe(JNIEnv *env, jclass object, jstring ffmpegPipePath) {
     const char *ffmpegPipePathString = (*env)->GetStringUTFChars(env, ffmpegPipePath, 0);
-
-    return mkfifo(ffmpegPipePathString, S_IRWXU | S_IRWXG | S_IROTH);
+    int result = mkfifo(ffmpegPipePathString, S_IRWXU | S_IRWXG | S_IROTH);
+    (*env)->ReleaseStringUTFChars(env, ffmpegPipePath, ffmpegPipePathString);
+    return result;
 }
 
 /**

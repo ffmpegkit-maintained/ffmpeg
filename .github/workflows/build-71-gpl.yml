@@ -69,14 +69,6 @@ jobs:
       - name: Export ANDROID_NDK_ROOT
         run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
-      - name: Restore actions/cache (covers any run that finished naturally)
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            android-7.1-lts/prebuilt
-            android-7.1-lts/src
-          key: ffmpeg-kit-build-71-gpl-${{ hashFiles('android-7.1-lts/android.sh', 'android-7.1-lts/scripts/**') }}
-
       # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
       # not a branch on this repo - same rationale as the 6.0-lts paid
       # tiers. Distinct branch name (71-gpl) from the production 6.0

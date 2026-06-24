@@ -82,21 +82,9 @@ jobs:
       # own: the save (post-step) is skipped entirely when the job is
       # cancelled or hits its timeout - which is exactly what happened twice
       # (one manual cancel, one 6h hard-timeout kill) - so it never actually
-      # saved anything across those attempts. Still worth restoring from
-      # though: it does work for any run that previously finished naturally
-      # (e.g. the test-harfbuzz.yml diagnostic, which shares this exact key).
-      - name: Restore actions/cache (covers any run that finished naturally)
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            android-6.0-lts/prebuilt
-            android-6.0-lts/src
-          key: ffmpeg-kit-build-${{ hashFiles('android-6.0-lts/android.sh', 'android-6.0-lts/scripts/**') }}
-
-      # Belt-and-suspenders on top of the cache above: a git branch as a
-      # second checkpoint store, since a `git push` that already succeeded
-      # is durable even if THIS job later gets cancelled/timed out (unlike
-      # actions/cache's save step). Restores after the actions/cache step so
+      # Belt-and-suspenders: a git branch as a checkpoint store, since a
+      # `git push` that already succeeded is durable even if THIS job later
+      # gets cancelled/timed out. Restores so
       # it can overlay anything more recent that a partial/killed run pushed
       # but never got to save through actions/cache's own post-step.
       #

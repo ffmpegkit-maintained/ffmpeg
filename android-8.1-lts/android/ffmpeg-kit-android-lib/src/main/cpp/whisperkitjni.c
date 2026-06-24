@@ -19,15 +19,6 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-/* Helper: millisecond timestamp (Whisper returns centiseconds) to SRT "HH:MM:SS,mmm". */
-static void cs_to_srt_time(long long cs, char *buf, size_t len) {
-    long long ms  = cs * 10;
-    int h  = (int)(ms / 3600000); ms %= 3600000;
-    int m  = (int)(ms / 60000);   ms %= 60000;
-    int s  = (int)(ms / 1000);    ms %= 1000;
-    snprintf(buf, len, "%02d:%02d:%02d,%03d", h, m, s, (int)ms);
-}
-
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 JNIEXPORT jlong JNICALL
@@ -70,6 +61,10 @@ Java_com_arthenica_ffmpegkit_WhisperKit_nativeFullTranscribe(
         jlong ctx_ptr, jfloatArray audio_data,
         jboolean translate, jstring language, jint num_threads) {
     (void)clazz;
+    if (!audio_data || !language) {
+        LOGE("nativeFullTranscribe: null argument");
+        return -1;
+    }
     struct whisper_context *ctx = (struct whisper_context *)(intptr_t)ctx_ptr;
 
     jfloat *samples  = (*env)->GetFloatArrayElements(env, audio_data, NULL);
@@ -135,5 +130,6 @@ JNIEXPORT jstring JNICALL
 Java_com_arthenica_ffmpegkit_WhisperKit_nativeGetSystemInfo(
         JNIEnv *env, jclass clazz) {
     (void)clazz;
-    return (*env)->NewStringUTF(env, whisper_print_system_info());
+    const char *info = whisper_print_system_info();
+    return (*env)->NewStringUTF(env, info ? info : "");
 }

@@ -70,17 +70,6 @@ jobs:
         run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
       # Distinct cache key/suffix (ffmpeg-kit-build-gpl-..., ci-cache-gpl
-      # branch) from build.yml's LGPL build - different ENABLED_LIBRARIES
-      # set (x264/x265/xvidcore/libvidstab/rubberband added), must never
-      # share a cache namespace with the non-GPL artifacts.
-      - name: Restore actions/cache (covers any run that finished naturally)
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            android-6.0-lts/prebuilt
-            android-6.0-lts/src
-          key: ffmpeg-kit-build-gpl-${{ hashFiles('android-6.0-lts/android.sh', 'android-6.0-lts/scripts/**') }}
-
       # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
       # not a branch on this repo - this repo is public, and a branch here
       # would publicly expose the finished paid-tier .aar with zero

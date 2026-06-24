@@ -72,17 +72,6 @@ jobs:
       - name: Export ANDROID_NDK_ROOT
         run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
-      # Distinct cache key/branch from build.yml and build-gpl.yml - a
-      # different ENABLED_LIBRARIES set (several libraries dropped), must
-      # never share a cache namespace with either of the other two tiers.
-      - name: Restore actions/cache (covers any run that finished naturally)
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            android-6.0-lts/prebuilt
-            android-6.0-lts/src
-          key: ffmpeg-kit-build-basic-${{ hashFiles('android-6.0-lts/android.sh', 'android-6.0-lts/scripts/**') }}
-
       # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
       # not a branch on this repo - this repo is public, and a branch here
       # would publicly expose the finished paid-tier .aar with zero
