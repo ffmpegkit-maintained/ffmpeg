@@ -38,11 +38,12 @@ Java_com_arthenica_ffmpegkit_WhisperKit_nativeInitContext(
     struct whisper_context_params cparams = whisper_context_default_params();
     cparams.use_gpu = false;
     struct whisper_context *ctx = whisper_init_from_file_with_params(path, cparams);
-    (*env)->ReleaseStringUTFChars(env, model_path, path);
     if (!ctx) {
         LOGE("Failed to load Whisper model from %s", path);
+        (*env)->ReleaseStringUTFChars(env, model_path, path);
         return 0L;
     }
+    (*env)->ReleaseStringUTFChars(env, model_path, path);
     LOGI("Whisper model loaded, context=%p", (void *)ctx);
     return (jlong)(intptr_t)ctx;
 }

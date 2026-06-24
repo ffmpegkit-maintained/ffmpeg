@@ -2,7 +2,21 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
-## v8.1.5-lts-android — 2026-06-23
+## v8.1.5-lts-android — 2026-06-24
+
+**Free tier:** bug-fix release for `ffmpeg-kit-free-81`. No native codec change — only JNI correctness fixes.
+
+- **Fix (C-1): `getVersion()` returned `"6.0-lts"` at runtime** — `FFMPEG_KIT_VERSION` was hardcoded to `"6.0"` in `ffmpegkit.h`. Updated to `"8.1"`. All three API paths now agree: `getVersion()` → `"8.1-lts"`, Maven coordinates `8.1.5`, `build.gradle` `versionName "8.1"`.
+- **Fix (C-2): JNI memory leak in `registerNewNativeFFmpegPipe`** — `GetStringUTFChars` result was never released, leaking one JVM string buffer per FFmpeg pipe creation. Fixed by saving the `mkfifo` return value, releasing the string, then returning.
+- **Fix (M-4): `NativeLoader.loadVersion()` test-mode fallback** — hardcoded `"6.0"` updated to `"8.1"` so unit tests see the correct version string.
+- **Fix: use-after-free in `nativeInitContext` (WhisperKit, Full/Full GPL only)** — the failure log `LOGE("Failed to load Whisper model from %s", path)` was emitted after `ReleaseStringUTFChars`, making `path` a dangling pointer. Log is now emitted before Release.
+- **Fix: stale comment in `build-81-free.yml`** — copy-paste from the 7.1 workflow said "other three 7.1 tiers"; corrected to 8.1.
+
+**Basic/Full/Full GPL:** no change for these tiers in this version bump.
+
+---
+
+## v8.1.5-lts-android (Full / Full GPL) — 2026-06-23
 
 First release with a **working Whisper JNI bridge** for the Full and Full GPL tiers. No code change for the Free or Basic tiers.
 

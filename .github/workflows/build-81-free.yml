@@ -76,8 +76,8 @@ jobs:
       - name: Export ANDROID_NDK_ROOT
         run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
-      # Distinct cache key/branch from the other three 7.1 tiers, and from
-      # all four 6.0-lts tiers - never share a cache namespace across
+      # Distinct cache key/branch from the other three 8.1 tiers, and from
+      # all four 6.0-lts and 7.1 tiers - never share a cache namespace across
       # lines or tiers.
       - name: Restore actions/cache (covers any run that finished naturally)
         uses: actions/cache/restore@v4

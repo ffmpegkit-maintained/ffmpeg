@@ -43,7 +43,7 @@ Three build trees are published and maintained in parallel — pick the FFmpeg v
 |---|---|---|---|
 | **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
-| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.5` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) |
 
 All lines use the same API surface, compileSdk 35, and 16 KB page alignment. The 6.0 and 7.1 lines use NDK r26c; the 8.1 line uses NDK r27c. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
 
@@ -59,7 +59,7 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1'
 implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5'
 
 // 8.1 LTS (FFmpeg 8.x "Hoare" — latest stable, NDK r27c)
-implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4'
+implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.5'
 ```
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
@@ -190,7 +190,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 | Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` ¹ | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` ¹ |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
 | Maven coordinates (7.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | — | — | — |
-| Maven coordinates (8.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | — | — | — |
+| Maven coordinates (8.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.5` | — | — | — |
 | Android `MediaCodec` (hardware accel) | ❌ | ✅ | ✅ | ✅ |
 | H.264 **decode** | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) | ✅ (native FFmpeg) |
 | H.264 **encode** | ❌ | ✅ via `openh264` | ✅ via `openh264` | ✅ via `x264` |
@@ -236,7 +236,7 @@ State of the `main` branch source (and of any `.aar` produced by the CI build go
 
 `arm64-v8a` is the only ABI CI builds and publishes; other ABIs are buildable from source via `android.sh` but not published. 16 KB alignment is enforced with `-Wl,-z,max-page-size=16384` — the CI build fails if any `.so` isn't aligned (see the "Verify 16 KB page size alignment" step in the relevant workflow).
 
-> Current releases: [v6.0.1-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android), [v7.1.5-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v7.1.5-lts-android), [v8.1.4-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v8.1.4-lts-android) — all fully up to date with this table.
+> Current releases: [v6.0.1-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v6.0.1-lts-android), [v7.1.5-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v7.1.5-lts-android), [v8.1.5-lts-android](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/tag/v8.1.5-lts-android) — all fully up to date with this table.
 
 `android.sh` has no `audio`/`video`/`https` build presets (those were upstream's historical Maven Central artifact names, not flags this script understands) — this fork's tiers (Free/Basic/Full/Full GPL, see [README § Available tiers](#available-tiers)) are defined by which `--disable-lib-*`/`--enable-gpl` flags each workflow passes, not by upstream's old variant names.
 
