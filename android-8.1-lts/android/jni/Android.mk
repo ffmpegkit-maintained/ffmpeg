@@ -128,11 +128,11 @@ endif
 # Whisper JNI bridge — only built when libwhisper.a is present in the prebuilt tree.
 # Produced exclusively by the Full and Full GPL tiers (--enable-whisper).
 ifeq ($(MY_LTS_POSTFIX),-lts)
-    WHISPER_PREBUILT_LIB_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)-lts/whisper/lib
-    WHISPER_PREBUILT_INC_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)-lts/whisper/include
+    WHISPER_PREBUILT_LIB_DIR := $(MY_LOCAL_PATH)/../../prebuilt/android-$(TARGET_ARCH)-lts/whisper/lib
+    WHISPER_PREBUILT_INC_DIR := $(MY_LOCAL_PATH)/../../prebuilt/android-$(TARGET_ARCH)-lts/whisper/include
 else
-    WHISPER_PREBUILT_LIB_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)/whisper/lib
-    WHISPER_PREBUILT_INC_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)/whisper/include
+    WHISPER_PREBUILT_LIB_DIR := $(MY_LOCAL_PATH)/../../prebuilt/android-$(TARGET_ARCH)/whisper/lib
+    WHISPER_PREBUILT_INC_DIR := $(MY_LOCAL_PATH)/../../prebuilt/android-$(TARGET_ARCH)/whisper/include
 endif
 
 WHISPER_LIB_EXISTS := $(shell test -f $(WHISPER_PREBUILT_LIB_DIR)/libwhisper.a && echo yes)
