@@ -2,6 +2,19 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
+## v8.1.7-lts-android — 2026-06-24
+
+**Critical fix — audio pipeline (all four 8.1 tiers).**
+
+- **Fix (C-CRIT): `all_channel_counts` crash in `fftools_ffmpeg_filter.c`** — `av_opt_set_int(abuffersink, "all_channel_counts", 1)` was called during filter graph initialization. FFmpeg 8.x removed this option from `abuffersink`'s `AVOption` table; the call returned an error that immediately aborted the filter graph, causing every audio operation (even a trivial AAC→PCM passthrough) to fail with:
+  ```
+  Option 'all_channel_counts' is not a runtime option
+  Error reinitializing filters! Conversion failed!
+  ```
+  Fix: removed the `av_opt_set_int` call. The new `AVChannelLayout` API in FFmpeg 8.x handles flexible channel counts without this option. Affects all four 8.1 tiers; upgrade from any 8.1.x is strongly recommended.
+
+---
+
 ## v8.1.6-lts-android (Full / Full GPL) — 2026-06-24
 
 WhisperKit JNI quality fixes for the Full and Full GPL tiers. No change for Free or Basic tiers.
@@ -11,17 +24,21 @@ WhisperKit JNI quality fixes for the Full and Full GPL tiers. No change for Free
 - **Fix (M-2): dead code removed** — `cs_to_srt_time()` helper function was defined but never called; removed.
 - **CI (all 12 workflows)**: removed dead `actions/cache/restore@v4` steps that were always cache misses (real restore uses git-based checkpoint branches).
 
-**Breaking — FFmpeg 8.x audio channel conversion (`-ac`):**
-FFmpeg 8.x removed `all_channel_counts` as a runtime option. Any `FFmpegKit.execute()` call that includes `-ac 1` (or any `-ac N`) fails with:
+**Breaking — FFmpeg 8.x audio resampling and channel conversion:**
+FFmpeg 8.x removed `all_channel_counts` as a runtime option. Both `-ac N` and `-ar N` (or any use of the `aresample` filter, explicit or implicit) fail with:
 ```
 Option 'all_channel_counts' is not a runtime option
 Error reinitializing filters! Conversion failed!
 ```
-**Replacement:** use an explicit audio filter instead of `-ac`:
+**Workaround:** extract raw PCM without any `-af`/`-ar`/`-ac`, then handle downmix and resampling in Java:
+```java
+// Extract raw PCM as-is (no channel/rate conversion in FFmpeg)
+FFmpegKit.execute("-i input.mp4 -vn -c:a pcm_s16le -y output.wav");
+
+// Parse WAV header (offset 22 = numChannels s16le, offset 24 = sampleRate i32le)
+// Downmix channels to mono, then linear-interpolation resample to 16000 Hz
 ```
--af "aformat=channel_layouts=mono,aresample=16000"
-```
-This is required for Whisper.cpp pipeline compatibility (and any other pipeline that needs mono 16 kHz output). Intermediate WAV s16le (`-c:a pcm_s16le`) + Java mixing is an alternative fallback if the filter chain is unavailable.
+This is required for Whisper.cpp pipeline compatibility.
 
 ---
 
