@@ -11,6 +11,14 @@
 [![Maven Central (7.1)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free-71?label=maven-central%207.1)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free-71)
 [![Maven Central (8.1)](https://img.shields.io/maven-central/v/dev.ffmpegkit-maintained/ffmpeg-kit-free-81?label=maven-central%208.1)](https://central.sonatype.com/artifact/dev.ffmpegkit-maintained/ffmpeg-kit-free-81)
 
+> ### 📱 See it in action — [**Whisper Demo app**](https://github.com/ffmpegkit-maintained/whisper-demo-android)
+>
+> A complete, open-source Android app built with this library: pick any video on your phone and get
+> **real-time subtitles** generated **100% on-device** by WhisperKit, with **live FR / EN / ES translation**.
+> Clone it, drop in your AAR, and run — **[github.com/ffmpegkit-maintained/whisper-demo-android](https://github.com/ffmpegkit-maintained/whisper-demo-android)**
+>
+> <a href="https://github.com/ffmpegkit-maintained/whisper-demo-android"><img src="https://raw.githubusercontent.com/ffmpegkit-maintained/whisper-demo-android/main/docs/screenshots/02-subtitles-fr.png" width="200" alt="Whisper Demo — on-device subtitles"></a>
+
 ## Why this fork exists
 
 [FFmpegKit](https://github.com/arthenica/ffmpeg-kit) was the de-facto standard for running FFmpeg on Android, iOS, macOS and tvOS. In April 2025, its original author archived the repository and stopped maintaining it, leaving thousands of apps depending on a library that could no longer:
@@ -96,6 +104,12 @@ Migrating from `com.arthenica:ffmpeg-kit-*`? See [docs/MIGRATION.md](docs/MIGRAT
 ## WhisperKit — on-device speech recognition (8.1 Full / Full GPL)
 
 **WhisperKit** is a new Java API exclusive to the **8.1 Full** and **8.1 Full GPL** tiers. It brings on-device speech recognition and subtitle generation directly to Android, powered by [Whisper.cpp v1.7.5](https://github.com/ggml-org/whisper.cpp). Audio never leaves the device — no server, no internet connection required for transcription.
+
+> 📱 **Full working demo app:** [**ffmpegkit-maintained/whisper-demo-android**](https://github.com/ffmpegkit-maintained/whisper-demo-android) — an open-source Android app that picks any video on your phone, generates **real-time subtitles on-device**, and switches **FR / EN / ES** live. The easiest way to see WhisperKit in action and a copy-paste starting point for your own app.
+>
+> | Home | Real-time subtitles (FR) | Live translation (EN) |
+> |:---:|:---:|:---:|
+> | [![Home](https://raw.githubusercontent.com/ffmpegkit-maintained/whisper-demo-android/main/docs/screenshots/01-home.png)](https://github.com/ffmpegkit-maintained/whisper-demo-android) | [![Subtitles FR](https://raw.githubusercontent.com/ffmpegkit-maintained/whisper-demo-android/main/docs/screenshots/02-subtitles-fr.png)](https://github.com/ffmpegkit-maintained/whisper-demo-android) | [![Translation EN](https://raw.githubusercontent.com/ffmpegkit-maintained/whisper-demo-android/main/docs/screenshots/03-translation-en.png)](https://github.com/ffmpegkit-maintained/whisper-demo-android) |
 
 ### What it can do
 
