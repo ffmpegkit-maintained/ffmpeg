@@ -2,6 +2,15 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
+## v8.1.5-lts-android — 2026-06-23
+
+First release with a **working Whisper JNI bridge** for the Full and Full GPL tiers. No code change for the Free or Basic tiers.
+
+- **Fix: Whisper was never actually built** — `main-android.sh` loop capped at index 50; Whisper is at index 92. Extended to `{1..93}`; added `whisper)` case in the dependency switch. Extended `android.sh` flags loop from `{0..61}` to `{0..92}`.
+- **New: `libwhisperkit.so`** — JNI shared library built conditionally (only when `libwhisper.a` is present in the prebuilt tree). Added in `android/jni/Android.mk`; links all ggml static archives with `--start-group/--end-group`.
+- **New: `whisperkitjni.c`** — C JNI bridge wrapping the Whisper.cpp v1.7.5 C API: `nativeInitContext`, `nativeFreeContext`, `nativeFullTranscribe`, `nativeGetSegmentCount/Text/T0/T1`, `nativeGetSystemInfo`.
+- **New: `WhisperKit.java`** — public Java API: `createFromFile()`, `transcribe()`, `transcribeToSrt()`, `translate()`, `translateToSrt()`, low-level segment access. Graceful degradation on Free/Basic tiers (loads the library conditionally; `createFromFile()` throws a descriptive `IOException` when the native library is absent).
+
 ## v8.1.4-lts-android — 2026-06-23
 
 Rebuild of all four tiers with **NDK r27c** (`27.2.12479018` — current NDK LTS), the first 8.1 release to use the newer toolchain. Source identical to 8.1.2. Maven artifact for the Free tier: `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4`.
