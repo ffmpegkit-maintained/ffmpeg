@@ -26,6 +26,8 @@ package com.arthenica.ffmpegkit;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WhisperKit implements Closeable {
 
@@ -149,6 +151,110 @@ public class WhisperKit implements Closeable {
     /** Translate to SRT with explicit source language and thread count. */
     public String translateToSrt(float[] pcmSamples, String sourceLanguage, int numThreads) {
         return runAndBuildSrt(pcmSamples, true, sourceLanguage, numThreads);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // External translation (any language target, via pluggable TranslationProvider)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Transcribe audio with Whisper, then translate the result to any language
+     * via an external {@link TranslationProvider} (DeepL, LibreTranslate, etc.).
+     *
+     * <p>Unlike {@link #translate} (which is Whisper's built-in English-only
+     * translation), this method supports any target language.
+     *
+     * @param pcmSamples 16 kHz mono PCM float samples
+     * @param translator the external translation backend
+     * @param targetLanguage BCP-47 code of the desired output language (e.g. "fr")
+     * @return translated plain text
+     * @throws IOException if the translation service fails
+     */
+    public String transcribeAndTranslate(float[] pcmSamples,
+                                         TranslationProvider translator,
+                                         String targetLanguage) throws IOException {
+        return transcribeAndTranslate(pcmSamples, LANGUAGE_AUTO, DEFAULT_THREADS,
+                translator, targetLanguage);
+    }
+
+    /** Transcribe + external translate with an explicit source-language hint. */
+    public String transcribeAndTranslate(float[] pcmSamples, String sourceLanguage,
+                                         TranslationProvider translator,
+                                         String targetLanguage) throws IOException {
+        return transcribeAndTranslate(pcmSamples, sourceLanguage, DEFAULT_THREADS,
+                translator, targetLanguage);
+    }
+
+    /** Transcribe + external translate with full control over all parameters. */
+    public String transcribeAndTranslate(float[] pcmSamples, String sourceLanguage,
+                                         int numThreads,
+                                         TranslationProvider translator,
+                                         String targetLanguage) throws IOException {
+        checkOpen();
+        String transcribed = runAndCollectText(pcmSamples, false, sourceLanguage, numThreads);
+        if (transcribed.isEmpty()) return "";
+        return translator.translate(transcribed, targetLanguage);
+    }
+
+    /**
+     * Transcribe audio with Whisper, translate each subtitle segment via an
+     * external {@link TranslationProvider}, and return an SRT string with the
+     * translated text and the original Whisper timestamps.
+     *
+     * @param pcmSamples 16 kHz mono PCM float samples
+     * @param translator the external translation backend
+     * @param targetLanguage BCP-47 code of the desired output language (e.g. "fr")
+     * @return SRT-formatted subtitles in the target language
+     * @throws IOException if the translation service fails
+     */
+    public String transcribeToSrtAndTranslate(float[] pcmSamples,
+                                              TranslationProvider translator,
+                                              String targetLanguage) throws IOException {
+        return transcribeToSrtAndTranslate(pcmSamples, LANGUAGE_AUTO, DEFAULT_THREADS,
+                translator, targetLanguage);
+    }
+
+    /** Transcribe-to-SRT + external translate with an explicit source-language hint. */
+    public String transcribeToSrtAndTranslate(float[] pcmSamples, String sourceLanguage,
+                                              TranslationProvider translator,
+                                              String targetLanguage) throws IOException {
+        return transcribeToSrtAndTranslate(pcmSamples, sourceLanguage, DEFAULT_THREADS,
+                translator, targetLanguage);
+    }
+
+    /** Transcribe-to-SRT + external translate with full control over all parameters. */
+    public String transcribeToSrtAndTranslate(float[] pcmSamples, String sourceLanguage,
+                                              int numThreads,
+                                              TranslationProvider translator,
+                                              String targetLanguage) throws IOException {
+        checkOpen();
+        int rc = nativeFullTranscribe(contextHandle, pcmSamples, false, sourceLanguage, numThreads);
+        if (rc != 0) return "";
+
+        int n = nativeGetSegmentCount(contextHandle);
+
+        // Collect non-empty segments and their timestamps.
+        List<long[]> times = new ArrayList<>(n);
+        List<String> texts = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            String seg = nativeGetSegmentText(contextHandle, i);
+            if (seg == null || seg.trim().isEmpty()) continue;
+            times.add(new long[]{nativeGetSegmentT0(contextHandle, i),
+                                  nativeGetSegmentT1(contextHandle, i)});
+            texts.add(seg.trim());
+        }
+
+        // Translate each segment individually to keep timestamps in sync.
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < texts.size(); i++) {
+            String translated = translator.translate(texts.get(i), targetLanguage);
+            if (translated == null || translated.trim().isEmpty()) continue;
+            sb.append(i + 1).append('\n');
+            sb.append(csToSrtTime(times.get(i)[0])).append(" --> ")
+              .append(csToSrtTime(times.get(i)[1])).append('\n');
+            sb.append(translated.trim()).append("\n\n");
+        }
+        return sb.toString();
     }
 
     // ──────────────────────────────────────────────────────────────────────────
