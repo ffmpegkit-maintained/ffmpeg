@@ -710,8 +710,7 @@ static int configure_output_audio_filter(FilterGraph *fg, OutputFilter *ofilter,
                                        name, NULL, NULL, fg->graph);
     if (ret < 0)
         return ret;
-    if ((ret = av_opt_set_int(ofilter->filter, "all_channel_counts", 1, AV_OPT_SEARCH_CHILDREN)) < 0)
-        return ret;
+    /* all_channel_counts removed from abuffersink in FFmpeg 8.x — option dropped */
 
 #define AUTO_INSERT_FILTER(opt_name, filter_name, arg) do {                 \
     AVFilterContext *filt_ctx;                                              \
