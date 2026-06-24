@@ -43,21 +43,9 @@ Three build trees are published and maintained in parallel — pick the FFmpeg v
 |---|---|---|---|
 | **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
-| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") + **Whisper.cpp v1.7.5** (on-device speech recognition & subtitles) — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) / [Full $34](https://ffmpegkit.gumroad.com/l/sogbka) / [Full GPL $49](https://ffmpegkit.gumroad.com/l/axqjy) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) |
 
-All lines use the same four tiers, the same API surface, and the same NDK r26c / compileSdk 35 / 16 KB page alignment. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
-
-### 🎙️ 8.1 LTS — On-device speech recognition & automatic subtitles (Full and Full GPL tiers)
-
-The Full and Full GPL tiers of the 8.1 line bundle **Whisper.cpp v1.7.5**, OpenAI Whisper ported to C++. Two capabilities, all on-device with no API key and no internet connection required:
-
-**1. Automatic transcription & subtitle generation**
-Transcribe any audio or video in 99+ languages and generate SRT subtitle files directly on the device. Feed the SRT into FFmpeg's `subtitles` filter to burn captions into the output — the entire pipeline (audio extraction → transcription → subtitle burn) runs in a single AAR, no third-party service involved.
-
-**2. Automatic translation to English**
-Whisper's translate mode transcribes non-English speech and outputs English text in one pass — no separate translation step, no cloud call. French, Spanish, Japanese, Arabic, and 95 other languages → English subtitles, entirely offline.
-
-These two features together make the 8.1 Full tier a complete on-device video captioning and localisation engine — accessible and privacy-preserving, with zero per-request cost regardless of usage volume.
+All lines use the same API surface, compileSdk 35, and 16 KB page alignment. The 6.0 and 7.1 lines use NDK r26c; the 8.1 line uses NDK r27c. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
 
 ### Add the Free tier
 
@@ -76,7 +64,7 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4'
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
 
-> **🎙️ Need automatic subtitles or speech recognition?** The 8.1 LTS paid tiers include **Whisper.cpp v1.7.5**: on-device transcription in 99+ languages and auto-translation to English — no API key, no internet, zero per-request cost. See the [Full tier ($34)](https://ffmpegkit.gumroad.com/l/sogbka) or [Full GPL tier ($49)](https://ffmpegkit.gumroad.com/l/axqjy).
+> **Need H.264/H.265 encode, hardware MediaCodec, or TLS on the 8.1 line?** The [Basic tier ($24)](https://ffmpegkit.gumroad.com/l/nxvxzc) adds those on top of the Free tier. Full and Full GPL tiers (with on-device Whisper speech recognition) are in active development — coming in a future update.
 
 For the paid tiers, download the `.aar` from [Gumroad](https://ffmpegkit.gumroad.com) and drop it in `app/libs/`, then:
 
@@ -109,9 +97,9 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 | | **Free** | **Basic** | **Full** | **Full GPL** |
 |---|---|---|---|---|
-| Distribution | Maven Central, free | Gumroad, $19 | Gumroad, $29 | Gumroad, $39 |
+| Distribution | Maven Central, free | Gumroad, $19 (6.0/7.1) · $24 (8.1) | Gumroad, $29 (6.0/7.1) | Gumroad, $39 (6.0/7.1) |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
-| Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` |
+| Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` ¹ | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` ¹ |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
 | Maven coordinates (7.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` | — | — | — |
 | Maven coordinates (8.1) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` | — | — | — |
@@ -137,6 +125,8 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
 **Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` (6.0 line, NDK r26c), `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` (7.1 line, NDK r26c), and `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` (8.1 line, NDK r27c); tag-triggered builds handle publishing automatically.
+
+¹ **8.1 Full and Full GPL** are temporarily unavailable on Gumroad pending proper integration of the on-device Whisper.cpp speech recognition API. The 6.0 and 7.1 Full/Full GPL tiers are unaffected.
 
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
