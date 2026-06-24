@@ -104,12 +104,16 @@ public class LibreTranslateProvider implements TranslationProvider {
             int code = conn.getResponseCode();
             if (code != HttpURLConnection.HTTP_OK) {
                 StringBuilder err = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = br.readLine()) != null) err.append(line);
+                java.io.InputStream es = conn.getErrorStream();
+                if (es != null) {
+                    try (BufferedReader br = new BufferedReader(
+                            new InputStreamReader(es, StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = br.readLine()) != null) err.append(line);
+                    }
                 }
-                throw new IOException("LibreTranslate returned HTTP " + code + ": " + err);
+                throw new IOException("LibreTranslate returned HTTP " + code
+                        + (err.length() > 0 ? ": " + err : ""));
             }
 
             StringBuilder sb = new StringBuilder();

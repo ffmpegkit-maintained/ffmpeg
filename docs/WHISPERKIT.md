@@ -315,13 +315,14 @@ wk.close();
 ## Checking availability at runtime
 
 ```java
-if (WhisperKit.getSystemInfo() != null) {
-    // libwhisperkit.so is loaded — we're on a Full or Full GPL build
-    Log.i("WhisperKit", WhisperKit.getSystemInfo()); // prints CPU capabilities
+// getSystemInfo() returns null on Free/Basic tiers (libwhisperkit.so absent)
+String info = WhisperKit.getSystemInfo();
+if (info != null) {
+    Log.i("WhisperKit", info); // prints CPU capabilities and build flags
 }
 ```
 
-Actually, `getSystemInfo()` will throw `UnsatisfiedLinkError` on Free/Basic since the static block already caught the load failure. The reliable way to check:
+To distinguish "not available" from "model not found":
 
 ```java
 try {
@@ -330,9 +331,9 @@ try {
     wk.close();
 } catch (IOException e) {
     if (e.getMessage() != null && e.getMessage().contains("requires the Full")) {
-        // Running on Free or Basic tier — WhisperKit not available
+        // Running on Free or Basic tier — WhisperKit not included
     } else {
-        // Model file not found or failed to load
+        // Model file not found or failed to initialize
     }
 }
 ```

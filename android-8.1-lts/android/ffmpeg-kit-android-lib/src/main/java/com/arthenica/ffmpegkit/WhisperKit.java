@@ -302,9 +302,9 @@ public class WhisperKit implements Closeable {
         return nativeGetSegmentT1(contextHandle, index);
     }
 
-    /** Whisper system information string (CPU capabilities, build flags). */
+    /** Whisper system information string (CPU capabilities, build flags). Null on Free/Basic tiers. */
     public static String getSystemInfo() {
-        return nativeGetSystemInfo();
+        return AVAILABLE ? nativeGetSystemInfo() : null;
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -344,12 +344,13 @@ public class WhisperKit implements Closeable {
         if (rc != 0) return "";
         int n = nativeGetSegmentCount(contextHandle);
         StringBuilder sb = new StringBuilder();
+        int srtIndex = 1;
         for (int i = 0; i < n; i++) {
             String text = nativeGetSegmentText(contextHandle, i);
             if (text == null || text.trim().isEmpty()) continue;
             long t0 = nativeGetSegmentT0(contextHandle, i);
             long t1 = nativeGetSegmentT1(contextHandle, i);
-            sb.append(i + 1).append('\n');
+            sb.append(srtIndex++).append('\n');
             sb.append(csToSrtTime(t0)).append(" --> ").append(csToSrtTime(t1)).append('\n');
             sb.append(text.trim()).append("\n\n");
         }
