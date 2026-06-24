@@ -11,6 +11,18 @@ WhisperKit JNI quality fixes for the Full and Full GPL tiers. No change for Free
 - **Fix (M-2): dead code removed** — `cs_to_srt_time()` helper function was defined but never called; removed.
 - **CI (all 12 workflows)**: removed dead `actions/cache/restore@v4` steps that were always cache misses (real restore uses git-based checkpoint branches).
 
+**Breaking — FFmpeg 8.x audio channel conversion (`-ac`):**
+FFmpeg 8.x removed `all_channel_counts` as a runtime option. Any `FFmpegKit.execute()` call that includes `-ac 1` (or any `-ac N`) fails with:
+```
+Option 'all_channel_counts' is not a runtime option
+Error reinitializing filters! Conversion failed!
+```
+**Replacement:** use an explicit audio filter instead of `-ac`:
+```
+-af "aformat=channel_layouts=mono,aresample=16000"
+```
+This is required for Whisper.cpp pipeline compatibility (and any other pipeline that needs mono 16 kHz output). Intermediate WAV s16le (`-c:a pcm_s16le`) + Java mixing is an alternative fallback if the filter chain is unavailable.
+
 ---
 
 ## v7.1.6-lts-android — 2026-06-24
