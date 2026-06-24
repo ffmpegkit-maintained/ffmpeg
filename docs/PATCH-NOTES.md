@@ -10,6 +10,10 @@ First release with a **working Whisper JNI bridge** for the Full and Full GPL ti
 - **New: `libwhisperkit.so`** — JNI shared library built conditionally (only when `libwhisper.a` is present in the prebuilt tree). Added in `android/jni/Android.mk`; links all ggml static archives with `--start-group/--end-group`.
 - **New: `whisperkitjni.c`** — C JNI bridge wrapping the Whisper.cpp v1.7.5 C API: `nativeInitContext`, `nativeFreeContext`, `nativeFullTranscribe`, `nativeGetSegmentCount/Text/T0/T1`, `nativeGetSystemInfo`.
 - **New: `WhisperKit.java`** — public Java API: `createFromFile()`, `transcribe()`, `transcribeToSrt()`, `translate()`, `translateToSrt()`, low-level segment access. Graceful degradation on Free/Basic tiers (loads the library conditionally; `createFromFile()` throws a descriptive `IOException` when the native library is absent).
+- **New: `TranslationProvider`** — functional interface for plugging in any external translation service (DeepL, LibreTranslate, Google Translate, Azure, etc.). Powers `WhisperKit.transcribeAndTranslate()` and `transcribeToSrtAndTranslate()`, which translate each SRT segment individually to keep timestamps in sync.
+- **New: `DeepLTranslationProvider`** — batteries-included implementation for the DeepL REST API. Auto-selects the Free vs. paid endpoint from the API key format. Uses `HttpsURLConnection` — no extra dependencies.
+- **New: `LibreTranslateProvider`** — batteries-included implementation for any LibreTranslate-compatible server (self-hosted or public). Configurable server URL and optional API key. Uses `HttpsURLConnection` — no extra dependencies.
+- **New: `docs/WHISPERKIT.md`** — full developer documentation: model download, PCM extraction via FFmpegKit, all API methods, DeepL/LibreTranslate quickstarts, end-to-end example, thread-safety and performance notes.
 
 ## v8.1.4-lts-android — 2026-06-23
 

@@ -64,7 +64,7 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4'
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases) for build systems that don't use Maven Central.
 
-> **Need H.264/H.265 encode, hardware MediaCodec, or TLS on the 8.1 line?** The [Basic tier ($24)](https://ffmpegkit.gumroad.com/l/nxvxzc) adds those on top of the Free tier. Full and Full GPL tiers (with on-device Whisper speech recognition) are in active development — coming in a future update.
+> **Need H.264/H.265 encode, hardware MediaCodec, or TLS?** The [Basic tier ($24)](https://ffmpegkit.gumroad.com/l/nxvxzc) adds those. Need **on-device speech recognition or subtitle generation**? The [Full ($34)](https://ffmpegkit.gumroad.com/l/sogbka) and [Full GPL ($49)](https://ffmpegkit.gumroad.com/l/axqjy) tiers add WhisperKit — see [docs/WHISPERKIT.md](docs/WHISPERKIT.md).
 
 For the paid tiers, download the `.aar` from [Gumroad](https://ffmpegkit.gumroad.com) and drop it in `app/libs/`, then:
 
@@ -91,13 +91,88 @@ FFmpegKit.executeAsync("-i input.mp4 -c:v mpeg4 output.mp4", session -> {
 
 Migrating from `com.arthenica:ffmpeg-kit-*`? See [docs/MIGRATION.md](docs/MIGRATION.md).
 
+> **On-device speech recognition** is available in the 8.1 Full and Full GPL tiers via [WhisperKit](#whisperkit--on-device-speech-recognition-81-full--full-gpl) — transcription, SRT subtitles, and translation to any language without sending audio to a server.
+
+## WhisperKit — on-device speech recognition (8.1 Full / Full GPL)
+
+**WhisperKit** is a new Java API exclusive to the **8.1 Full** and **8.1 Full GPL** tiers. It brings on-device speech recognition and subtitle generation directly to Android, powered by [Whisper.cpp v1.7.5](https://github.com/ggml-org/whisper.cpp). Audio never leaves the device — no server, no internet connection required for transcription.
+
+### What it can do
+
+| | Code |
+|---|---|
+| Transcribe audio → plain text | `wk.transcribe(pcm)` |
+| Transcribe audio → SRT subtitles | `wk.transcribeToSrt(pcm)` |
+| Transcribe + translate to **English** (Whisper built-in, offline) | `wk.translate(pcm)` |
+| Transcribe + translate to **any language** via external service | `wk.transcribeAndTranslate(pcm, provider, "fr")` |
+| Transcribe + translate to any language → SRT | `wk.transcribeToSrtAndTranslate(pcm, provider, "de")` |
+
+### Quick start
+
+```java
+// 1. Extract 16 kHz mono PCM from a video using FFmpegKit
+String pcmPath = context.getCacheDir() + "/audio.pcm";
+FFmpegKit.executeAsync(
+    "-i /path/to/video.mp4 -ar 16000 -ac 1 -f f32le " + pcmPath,
+    session -> {
+        if (!ReturnCode.isSuccess(session.getReturnCode())) return;
+        try {
+            // 2. Load PCM into float[]
+            byte[] bytes = java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(pcmPath));
+            java.nio.FloatBuffer fb = java.nio.ByteBuffer.wrap(bytes)
+                .order(java.nio.ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
+            float[] pcm = new float[fb.remaining()];
+            fb.get(pcm);
+
+            // 3. Transcribe (GGML model downloaded separately — see docs/WHISPERKIT.md)
+            try (WhisperKit wk = WhisperKit.createFromFile(
+                    context.getFilesDir() + "/ggml-base.bin")) {
+
+                String text = wk.transcribe(pcm);               // plain text
+                String srt  = wk.transcribeToSrt(pcm);          // SRT subtitles
+                String eng  = wk.translate(pcm);                 // → English (offline)
+            }
+        } catch (IOException e) { /* handle */ }
+    });
+```
+
+### Translation to any language
+
+Two ready-to-use `TranslationProvider` implementations are included. Both use Android's built-in `HttpsURLConnection` — no extra dependencies.
+
+**DeepL** (500 000 characters/month free — [get API key](https://www.deepl.com/pro-api)):
+
+```java
+TranslationProvider deepl = new DeepLTranslationProvider("YOUR_DEEPL_API_KEY");
+
+try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
+    // Transcribe audio and translate each subtitle segment to French
+    String frenchSrt = wk.transcribeToSrtAndTranslate(pcm, deepl, "FR");
+}
+```
+
+**LibreTranslate** (open-source, self-hostable — no vendor lock-in):
+
+```java
+TranslationProvider lt = new LibreTranslateProvider();  // public instance
+// or: new LibreTranslateProvider("https://your-server.example.com", "API_KEY");
+
+try (WhisperKit wk = WhisperKit.createFromFile(modelPath)) {
+    String germanSrt = wk.transcribeToSrtAndTranslate(pcm, lt, "de");
+}
+```
+
+`TranslationProvider` is also a plain functional interface — implement it inline for Google Translate, Azure, or any other service.
+
+> Full documentation, model download links, and a complete end-to-end example are in [docs/WHISPERKIT.md](docs/WHISPERKIT.md).
+
 ## Available tiers
 
 Four separately-built AARs, so you only pay for and ship the codec coverage your app actually needs. All four are `arm64-v8a` only; see [README § Compatibility](#compatibility) for NDK/SDK details that apply to all of them. Each tier is built for the **6.0 LTS**, **7.1 LTS**, and **8.1 LTS** lines (see [Quick start](#quick-start)).
 
 | | **Free** | **Basic** | **Full** | **Full GPL** |
 |---|---|---|---|---|
-| Distribution | Maven Central, free | Gumroad, $19 (6.0/7.1) · $24 (8.1) | Gumroad, $29 (6.0/7.1) | Gumroad, $39 (6.0/7.1) |
+| Distribution | Maven Central, free | Gumroad, $19 (6.0/7.1) · $24 (8.1) | Gumroad, $29 (6.0/7.1) · $34 (8.1) | Gumroad, $39 (6.0/7.1) · $49 (8.1) |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
 | Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` ¹ | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` ¹ |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
@@ -121,12 +196,14 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 | TLS | ❌ | ✅ `openssl` | ✅ `openssl` | ✅ `openssl` |
 | `xvidcore`, `libvidstab`, `rubberband` | ❌ | ❌ | ❌ | ✅ (GPL-licensed) |
 | `zimg`, `snappy`, `soxr`, `libxml2`, Android `zlib` | ❌ | ✅ | ✅ | ✅ |
+| **WhisperKit** — on-device speech recognition (Whisper.cpp v1.7.5) | ❌ | ❌ | ✅ 8.1 only | ✅ 8.1 only |
+| **TranslationProvider** — `DeepLTranslationProvider`, `LibreTranslateProvider` | ❌ | ❌ | ✅ 8.1 only | ✅ 8.1 only |
 
 **H.264/H.265 note:** every tier can *play back* H.264/H.265 content — decoding is built into FFmpeg itself, not tied to any of `openh264`/`kvazaar`/`x264`/`x265`. What differs between tiers is whether you can *encode/produce* H.264 or H.265 output, and with which encoder.
 
 **Free** is intentionally software-only (no `MediaCodec`) for consistent behavior across devices regardless of manufacturer hardware codec quirks, while still giving real, modern video encoding (VP9/AV1 via `libvpx`/`libaom`, not just decode) for free via Maven Central. Published at `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` (6.0 line, NDK r26c), `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.5` (7.1 line, NDK r26c), and `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.4` (8.1 line, NDK r27c); tag-triggered builds handle publishing automatically.
 
-¹ **8.1 Full and Full GPL** are temporarily unavailable on Gumroad pending proper integration of the on-device Whisper.cpp speech recognition API. The 6.0 and 7.1 Full/Full GPL tiers are unaffected.
+¹ **8.1 Full and Full GPL** include WhisperKit (on-device Whisper.cpp speech recognition) — see [docs/WHISPERKIT.md](docs/WHISPERKIT.md). The 6.0 and 7.1 Full/Full GPL tiers do not include WhisperKit (Android 8.x feature only).
 
 **GnuTLS is never included** in any tier, on purpose: it conflicts with OpenSSL in FFmpeg's own `configure` (both provide TLS, only one can be enabled at a time) — see [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md).
 
@@ -158,6 +235,7 @@ See [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://git
 - [docs/BUILD.md](docs/BUILD.md) — building the native libraries and AAR from source
 - [docs/MIGRATION.md](docs/MIGRATION.md) — moving from upstream `com.arthenica:ffmpeg-kit-*` (Maven Central) to this fork
 - [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) — what changed in this fork vs. upstream, release by release
+- [docs/WHISPERKIT.md](docs/WHISPERKIT.md) — WhisperKit full documentation: model setup, API reference, DeepL/LibreTranslate integration, end-to-end examples
 - [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki) — FAQ, troubleshooting, and deeper compatibility notes
 
 ## License
