@@ -124,3 +124,32 @@ ifeq ($(MY_BUILD_GENERIC_FFMPEG_KIT), true)
 
     $(call import-module, ffmpeg)
 endif
+
+# Whisper JNI bridge — only built when libwhisper.a is present in the prebuilt tree.
+# Produced exclusively by the Full and Full GPL tiers (--enable-whisper).
+ifeq ($(MY_LTS_POSTFIX),-lts)
+    WHISPER_PREBUILT_LIB_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)-lts/whisper/lib
+    WHISPER_PREBUILT_INC_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)-lts/whisper/include
+else
+    WHISPER_PREBUILT_LIB_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)/whisper/lib
+    WHISPER_PREBUILT_INC_DIR := $(MY_LOCAL_PATH)/../prebuilt/android-$(TARGET_ARCH)/whisper/include
+endif
+
+WHISPER_LIB_EXISTS := $(shell test -f $(WHISPER_PREBUILT_LIB_DIR)/libwhisper.a && echo yes)
+ifeq ($(WHISPER_LIB_EXISTS),yes)
+    # Collect all static libs from the whisper prebuilt dir (whisper + ggml sub-libs).
+    # --start-group/--end-group resolves circular references between the archives.
+    WHISPER_ALL_STATIC_LIBS := $(shell find $(WHISPER_PREBUILT_LIB_DIR) -name "lib*.a" 2>/dev/null)
+
+    include $(CLEAR_VARS)
+    LOCAL_PATH := $(MY_LOCAL_PATH)/../ffmpeg-kit-android-lib/src/main/cpp
+    LOCAL_ARM_MODE := $(MY_ARM_MODE)
+    LOCAL_MODULE := whisperkit
+    LOCAL_SRC_FILES := whisperkitjni.c
+    LOCAL_C_INCLUDES := $(WHISPER_PREBUILT_INC_DIR)
+    LOCAL_CFLAGS := -Wall -Wno-unused-parameter
+    LOCAL_LDLIBS := -llog -lm -landroid
+    LOCAL_LDFLAGS := -Wl,--start-group $(WHISPER_ALL_STATIC_LIBS) -Wl,--end-group
+    LOCAL_ARM_NEON := ${MY_ARM_NEON}
+    include $(BUILD_SHARED_LIBRARY)
+endif

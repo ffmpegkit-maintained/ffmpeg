@@ -234,7 +234,7 @@ for run_arch in {0..12}; do
     . "${BASEDIR}"/scripts/main-android.sh "${ENABLED_LIBRARIES[@]}" || exit 1
 
     # CLEAR FLAGS
-    for library in {0..61}; do
+    for library in {0..92}; do
       library_name=$(get_library_name ${library})
       unset "$(echo "OK_${library_name}" | sed "s/\-/\_/g")"
       unset "$(echo "DEPENDENCY_REBUILT_${library_name}" | sed "s/\-/\_/g")"
