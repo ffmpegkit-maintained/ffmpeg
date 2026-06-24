@@ -2,6 +2,37 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
+## v8.1.6-lts-android (Full / Full GPL) — 2026-06-24
+
+WhisperKit JNI quality fixes for the Full and Full GPL tiers. No change for Free or Basic tiers.
+
+- **Fix (C-1): use-after-free in `nativeFullTranscribe`** — null-check added for `audio_data` and `language` before `GetFloatArrayElements` / `GetStringUTFChars`; returns `-1` with a log instead of crashing on null input.
+- **Fix (M-1): `nativeGetSystemInfo` null guard** — `whisper_print_system_info()` return value now guarded against NULL before passing to `NewStringUTF`.
+- **Fix (M-2): dead code removed** — `cs_to_srt_time()` helper function was defined but never called; removed.
+- **CI (all 12 workflows)**: removed dead `actions/cache/restore@v4` steps that were always cache misses (real restore uses git-based checkpoint branches).
+
+---
+
+## v7.1.6-lts-android — 2026-06-24
+
+Quality fix release for all four tiers of the 7.1 LTS line. Includes the JNI leak fix and version string corrections from the 8.1.5 Free release.
+
+- **Fix (C-1): JNI memory leak in `registerNewNativeFFmpegPipe`** — `GetStringUTFChars` result was never released, leaking one JVM string buffer per FFmpeg pipe creation. Fixed by saving the return value, calling `mkfifo`, releasing the string, then returning.
+- **Fix (C-2): `getVersion()` returned `"6.0-lts"` at runtime** — `FFMPEG_KIT_VERSION` was hardcoded to `"6.0"` in `ffmpegkit.h`. Updated to `"7.1"`.
+- **Fix (M-1): `NativeLoader.loadVersion()` test-mode fallback** — hardcoded `"6.0"` updated to `"7.1"` so unit tests see the correct version string.
+- **CI**: removed dead `actions/cache/restore@v4` steps in all four 7.1 workflows.
+
+---
+
+## v6.0.3-lts-android — 2026-06-24
+
+Quality fix release for all four tiers of the 6.0 LTS line. Supersedes 6.0.2 (which was published to Maven Central before the JNI fix below).
+
+- **Fix (C-1): JNI memory leak in `registerNewNativeFFmpegPipe`** — `GetStringUTFChars` result was never released, leaking one JVM string buffer per FFmpeg pipe creation. Fixed by saving the return value, calling `mkfifo`, releasing the string, then returning. Maven Central artifact: `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.3`.
+- **CI**: removed dead `actions/cache/restore@v4` steps in all four 6.0 workflows.
+
+---
+
 ## v8.1.5-lts-android — 2026-06-24
 
 **Free tier:** bug-fix release for `ffmpeg-kit-free-81`. No native codec change — only JNI correctness fixes.
