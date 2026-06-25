@@ -199,7 +199,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 | | **Free** | **Basic** | **Full** | **Full GPL** |
 |---|---|---|---|---|
-| Distribution | Maven Central, free | Gumroad, $19 (6.0/7.1) · $24 (8.1) | Gumroad, $29 (6.0/7.1) · $34 (8.1) | Gumroad, $39 (6.0/7.1) · $49 (8.1) |
+| Distribution | Maven Central, free | Gumroad, $19 (6.0/7.1) · $24 (8.1) | Gumroad, $29 (6.0/7.1) · $34 (8.1) | Gumroad, $39 (6.0/7.1) · $44 (8.1) |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
 | Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` ¹ | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` ¹ |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.1` | — | — | — |
