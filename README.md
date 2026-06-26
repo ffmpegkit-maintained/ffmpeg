@@ -19,6 +19,8 @@
 >
 > <a href="https://github.com/ffmpegkit-maintained/whisper-demo-android"><img src="https://raw.githubusercontent.com/ffmpegkit-maintained/whisper-demo-android/main/docs/screenshots/02-subtitles-fr.png" width="200" alt="Whisper Demo — on-device subtitles"></a>
 
+[![Get Prebuilt AAR](https://img.shields.io/badge/Get_Pre-built_AAR_on_Gumroad-%2300B0FF?style=for-the-badge&logo=gumroad)](https://ffmpegkit.gumroad.com)
+
 ## Why this fork exists
 
 [FFmpegKit](https://github.com/arthenica/ffmpeg-kit) was the de-facto standard for running FFmpeg on Android, iOS, macOS and tvOS. In April 2025, its original author archived the repository and stopped maintaining it, leaving thousands of apps depending on a library that could no longer:
