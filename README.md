@@ -256,6 +256,16 @@ State of the `main` branch source (and of any `.aar` produced by the CI build go
 
 See [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://github.com/ffmpegkit-maintained/ffmpeg-kit/wiki) for history.
 
+## From the same maintainer
+
+> **Need to download the videos before processing them?**
+>
+> [**yt-dlp-android**](https://github.com/ffmpegkit-maintained/yt-dlp-android) — a clean Android library wrapping [yt-dlp](https://github.com/yt-dlp/yt-dlp), supporting 1000+ sites. Solves the impersonation error (`The extractor is attempting impersonation, but no impersonate target is available`) that all existing Android wrappers hit. Free tier via JitPack; Pro tier with native curl-cffi for full impersonation support.
+>
+> The natural companion to ffmpeg-kit: download with yt-dlp-android, process and transcribe with this library.
+
+---
+
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute
