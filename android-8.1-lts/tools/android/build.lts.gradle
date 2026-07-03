@@ -50,13 +50,13 @@ def publishVersion = project.findProperty('publish.version') ?: '8.1.7'
 // See the matching comment in tools/android/build.gradle - same
 // vanniktech-auto-configures-singleVariant reasoning applies here.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-81", publishVersion)
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg", publishVersion)
 
     signAllPublications()
     publishToMavenCentral(true)
 
     pom {
-        name = "ffmpeg-81 / ffmpegkit-81 / ffmpeg-kit-81 — Android FFmpeg Library (8.1 LTS, Free)"
+        name = "ffmpeg / ffmpegkit / ffmpeg-kit — Android FFmpeg Library (8.1 LTS, Free)"
         description = "Android FFmpeg library — 8.1 LTS line, Free tier. VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Community-maintained fork of FFmpegKit (ffmpegkit / ffmpeg-kit). Paid tiers add H.264/H.265 encode, hardware codecs, TLS, OCR, Whisper transcription, SRT — see Project URL."
         inceptionYear = "2026"
         url = "https://github.com/ffmpegkit-maintained/ffmpeg/releases"
