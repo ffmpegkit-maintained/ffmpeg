@@ -85,9 +85,11 @@ mavenPublishing {
 }
 
 // ── Redirect publications ─────────────────────────────────────────────────
-// Empty JARs satisfy Maven Central sources+javadoc requirements for aliases.
-tasks.register('redirectSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+// Separate Jar tasks per redirect so signing doesn't produce duplicate files.
+tasks.register('redirectKitSourcesJar', Jar) { archiveClassifier = 'sources'; archiveBaseName = 'redirect-kit' }
+tasks.register('redirectKitJavadocJar', Jar) { archiveClassifier = 'javadoc'; archiveBaseName = 'redirect-kit' }
+tasks.register('redirectDashSourcesJar', Jar) { archiveClassifier = 'sources'; archiveBaseName = 'redirect-dash' }
+tasks.register('redirectDashJavadocJar', Jar) { archiveClassifier = 'javadoc'; archiveBaseName = 'redirect-dash' }
 
 publishing {
     publications {
@@ -95,8 +97,8 @@ publishing {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpegkit'
             version    = publishVersion
-            artifact(tasks.named('redirectSourcesJar'))
-            artifact(tasks.named('redirectJavadocJar'))
+            artifact(tasks.named('redirectKitSourcesJar'))
+            artifact(tasks.named('redirectKitJavadocJar'))
             pom {
                 name        = 'FFmpegKit Android (alias: ffmpegkit → ffmpeg)'
                 description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
@@ -135,8 +137,8 @@ publishing {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpeg-kit'
             version    = publishVersion
-            artifact(tasks.named('redirectSourcesJar'))
-            artifact(tasks.named('redirectJavadocJar'))
+            artifact(tasks.named('redirectDashSourcesJar'))
+            artifact(tasks.named('redirectDashJavadocJar'))
             pom {
                 name        = 'FFmpegKit Android (alias: ffmpeg-kit → ffmpeg)'
                 description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
@@ -170,6 +172,21 @@ publishing {
                     dep.appendNode('type',       'aar')
                 }
             }
+        }
+    }
+}
+
+// signAllPublications() inside mavenPublishing{} only covers vanniktech's own
+// publication. Redirect publications need explicit signing configuration.
+afterEvaluate {
+    def key      = findProperty('signingInMemoryKey') as String
+    def keyId    = findProperty('signingInMemoryKeyId') as String
+    def password = findProperty('signingInMemoryKeyPassword') as String
+    if (key) {
+        signing {
+            useInMemoryPgpKeys(keyId, key, password)
+            sign publishing.publications.mavenRedirectKit
+            sign publishing.publications.mavenRedirectDash
         }
     }
 }
