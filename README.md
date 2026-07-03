@@ -51,7 +51,7 @@ Three build trees are published and maintained in parallel — pick the FFmpeg v
 |---|---|---|---|
 | **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg-kit-free:6.0.3` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg-kit-free-71:7.1.6` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
-| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.7` | [Basic $24](https://ffmpegkit.gumroad.com/l/nxvxzc) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg-kit-free-81:8.1.7` | [Basic](https://ffmpegkit.gumroad.com/l/nxvxzc) / [Full](https://ffmpegkit.gumroad.com/l/sogbka) / [Full GPL](https://ffmpegkit.gumroad.com/l/axqjy) |
 
 All lines use the same API surface, compileSdk 35, and 16 KB page alignment. The 6.0 and 7.1 lines use NDK r26c; the 8.1 line uses NDK r27c. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
 
