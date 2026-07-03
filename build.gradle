@@ -1,0 +1,20 @@
+plugins {
+    id 'maven-publish'
+}
+
+group = 'com.github.ffmpegkit-maintained'
+version = project.findProperty('jitpack.version') ?: 'local'
+
+publishing {
+    publications {
+        aar(MavenPublication) {
+            artifactId = 'ffmpeg-kit'
+            artifact('ffmpeg-kit-android.aar') {
+                extension = 'aar'
+            }
+            pom {
+                packaging = 'aar'
+            }
+        }
+    }
+}

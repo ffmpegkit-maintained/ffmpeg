@@ -1,0 +1,25 @@
+jdk:
+  - openjdk17
+before_install:
+  - chmod +x gradlew
+install:
+  - |
+    set -e
+    TAG="${JITPACK_VERSION}"
+    NUM=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    MAJOR=$(echo "$NUM" | cut -d. -f1)
+
+    if [ "$MAJOR" = "8" ]; then
+      AAR="ffmpeg-kit-free81-${NUM}-arm64-v8a.aar"
+    elif [ "$MAJOR" = "7" ]; then
+      AAR="ffmpeg-kit-free71-${NUM}-arm64-v8a.aar"
+    else
+      AAR="ffmpeg-kit-free-${NUM}-arm64-v8a.aar"
+    fi
+
+    echo "Tag: $TAG | version: $NUM | AAR: $AAR"
+    curl -fL -o ffmpeg-kit-android.aar \
+      "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/download/${TAG}/${AAR}"
+    echo "Downloaded: $(du -sh ffmpeg-kit-android.aar)"
+
+    ./gradlew publishToMavenLocal -Pjitpack.version="${TAG}"
