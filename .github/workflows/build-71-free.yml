@@ -212,10 +212,12 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           VERSION="${VERSION%-free71}"
           GROUP="dev.ffmpegkit-maintained"
-          ARTIFACT="ffmpeg-kit-free-71"
+          ARTIFACT="ffmpeg-71"
           POM_URL="https://repo1.maven.org/maven2/${GROUP//.//}/${ARTIFACT}/${VERSION}/${ARTIFACT}-${VERSION}.pom"
           if curl -sf "$POM_URL" > /dev/null 2>&1; then
             echo "Version ${VERSION} already on Maven Central — skipping publish."
           else
-            ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral --no-configuration-cache
+            ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral \
+              --no-configuration-cache \
+              -Ppublish.version="${VERSION}"
           fi

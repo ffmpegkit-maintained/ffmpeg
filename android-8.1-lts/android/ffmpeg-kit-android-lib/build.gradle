@@ -8,7 +8,6 @@
 // `./gradlew assembleRelease` runs (which don't go through android.sh)
 // kept using this file directly and made the change look like it worked.
 // Edit the templates instead; this file is kept in sync only so local
-// Gradle commands run against the same content CI actually builds with.
 apply plugin: 'com.android.library'
 apply plugin: 'com.vanniktech.maven.publish'
 
@@ -20,10 +19,10 @@ android {
     ndkVersion "27.2.12479018"
 
     defaultConfig {
-        minSdk 24
+        minSdk 16
         targetSdk 35
-        versionCode 240810
-        versionName "8.1"
+        versionCode 160810
+        versionName "8.1.LTS"
         project.archivesBaseName = "ffmpeg-kit"
         consumerProguardFiles "consumer-rules.pro"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -37,8 +36,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     sourceSets {
@@ -55,39 +54,27 @@ android {
     }
 }
 
-// com.vanniktech.maven.publish auto-configures android.publishing.singleVariant
-// ("release", withJavadocJar+withSourcesJar) itself for Android library
-// projects - a manual android.publishing.singleVariant block here conflicts
-// with that ("... DSL multiple times ... is not allowed"), so don't add one
-// back; assembleRelease/bundleReleaseAar still work the same way through
-// the plugin's own auto-configuration.
-//
-// Only the Free tier (built by .github/workflows/build-free.yml) actually
-// invokes ./gradlew publishAndReleaseToMavenCentral - the other three tiers
-// (Basic/Full/Full GPL) share this same module but are distributed as
-// files on Gumroad, not via this task, so this block being present is
-// harmless for them.
+// Version passed from CI via -Ppublish.version; falls back to local-dev default.
+def publishVersion = project.findProperty('publish.version') ?: '8.1.7'
+
+// See the matching comment in tools/android/build.gradle - same
+// vanniktech-auto-configures-singleVariant reasoning applies here.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-81", "8.1.7")
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-81", publishVersion)
 
     signAllPublications()
     publishToMavenCentral(true)
 
     pom {
-        name = "FFmpegKit 8.1 LTS (Free)"
-        description = "FFmpegKit 8.1 LTS — Free tier (software-only: AV1/VP8/VP9/Opus/Vorbis/Speex). The paid tiers of this 8.1 line include Whisper.cpp v1.7.5 for on-device speech recognition: (1) automatic transcription in 99+ languages with SRT subtitle output, (2) auto-translation of any language to English — no API key, no internet, fully on-device. For H.264/H.265 encode, hardware MediaCodec, TLS, subtitles rendering, OCR, SRT streaming, or Whisper, see Basic-81/Full-81/Full-GPL-81 at the Project URL below."
+        name = "ffmpeg-81 / ffmpegkit-81 / ffmpeg-kit-81 — Android FFmpeg Library (8.1 LTS, Free)"
+        description = "Android FFmpeg library — 8.1 LTS line, Free tier. VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Community-maintained fork of FFmpegKit (ffmpegkit / ffmpeg-kit). Paid tiers add H.264/H.265 encode, hardware codecs, TLS, OCR, Whisper transcription, SRT — see Project URL."
         inceptionYear = "2026"
-        // Points at the GitHub Release with the tier comparison table AND
-        // direct Gumroad/Maven links together, not just the bare repo root
-        // - Maven Central renders this as an actual clickable "Project URL"
-        // link (unlike the plain-text description field above, which
-        // Central Portal does NOT linkify even when it contains a URL).
-        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases"
+        url = "https://github.com/ffmpegkit-maintained/ffmpeg/releases"
 
         licenses {
             license {
                 name = "GNU Lesser General Public License v3.0"
-                url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/blob/main/LICENSE"
+                url = "https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE"
                 distribution = "repo"
             }
         }
@@ -101,9 +88,98 @@ mavenPublishing {
         }
 
         scm {
-            url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit"
-            connection = "scm:git:git://github.com/ffmpegkit-maintained/ffmpeg-kit.git"
-            developerConnection = "scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg-kit.git"
+            url = "https://github.com/ffmpegkit-maintained/ffmpeg"
+            connection = "scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git"
+            developerConnection = "scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git"
+        }
+    }
+}
+
+// ── Redirect publications ─────────────────────────────────────────────────
+tasks.register('redirectSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+
+publishing {
+    publications {
+        mavenRedirectKit(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpegkit-81'
+            version    = publishVersion
+            artifact(tasks.named('redirectSourcesJar'))
+            artifact(tasks.named('redirectJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 8.1 (alias: ffmpegkit-81 → ffmpeg-81)'
+                description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg-81 in your project — same Android FFmpeg 8.1 library (ffmpegkit / ffmpeg-kit maintained fork).'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'ffmpegkit-maintained'
+                        name = 'ffmpegkit-maintained'
+                        url  = 'https://github.com/ffmpegkit-maintained'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg-81')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
+        }
+        mavenRedirectDash(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-81'
+            version    = publishVersion
+            artifact(tasks.named('redirectSourcesJar'))
+            artifact(tasks.named('redirectJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 8.1 (alias: ffmpeg-kit-81 → ffmpeg-81)'
+                description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg-81 in your project — same Android FFmpeg 8.1 library (ffmpegkit / ffmpeg-kit maintained fork).'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'ffmpegkit-maintained'
+                        name = 'ffmpegkit-maintained'
+                        url  = 'https://github.com/ffmpegkit-maintained'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg-81')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
         }
     }
 }
@@ -121,6 +197,4 @@ dependencies {
     api 'com.arthenica:smart-exception-java:0.2.1'
     testImplementation "androidx.test.ext:junit:1.1.5"
     testImplementation 'org.json:json:20230618'
-    androidTestImplementation "androidx.test.ext:junit:1.1.5"
-    androidTestImplementation "androidx.test:runner:1.5.2"
 }

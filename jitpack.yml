@@ -19,7 +19,7 @@ install:
 
     echo "Tag: $TAG | version: $NUM | AAR: $AAR"
     curl -fL -o ffmpeg-kit-android.aar \
-      "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases/download/${TAG}/${AAR}"
+      "https://github.com/ffmpegkit-maintained/ffmpeg/releases/download/${TAG}/${AAR}"
     echo "Downloaded: $(du -sh ffmpeg-kit-android.aar)"
 
     ./gradlew publishToMavenLocal -Pjitpack.version="${TAG}"

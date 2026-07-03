@@ -44,29 +44,27 @@ android {
     }
 }
 
+// Version passed from CI via -Ppublish.version; falls back to local-dev default.
+def publishVersion = project.findProperty('publish.version') ?: '7.1.5'
+
 // See the matching comment in tools/android/build.gradle - same
 // vanniktech-auto-configures-singleVariant reasoning applies here.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-71", "7.1.5")
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg-71", publishVersion)
 
     signAllPublications()
     publishToMavenCentral(true)
 
     pom {
-        name = "FFmpegKit 7.1 LTS (Free)"
-        description = "FFmpeg 7.1 LTS line - one of 4 tiers from the ffmpegkit-maintained FFmpegKit fork (Free-71/Basic-71/Full-71/Full GPL-71) - this is FREE: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Coexists with the separate 6.0 LTS line (dev.ffmpegkit-maintained:ffmpeg-kit-free) - distinct artifact, does not replace it. Need H.264/H.265 encode, hardware codec access, TLS, images, OCR, subtitles or SRT? See the Basic-71/Full-71/Full GPL-71 tiers via the Project URL link below."
+        name = "ffmpeg-71 / ffmpegkit-71 / ffmpeg-kit-71 — Android FFmpeg Library (7.1 LTS, Free)"
+        description = "Android FFmpeg library — 7.1 LTS line, Free tier. VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Community-maintained fork of FFmpegKit (ffmpegkit / ffmpeg-kit). Paid tiers add H.264/H.265 encode, hardware codecs, TLS, OCR, Whisper transcription, SRT — see Project URL."
         inceptionYear = "2026"
-        // Points at the GitHub Release with the tier comparison table AND
-        // direct Gumroad/Maven links together, not just the bare repo root
-        // - Maven Central renders this as an actual clickable "Project URL"
-        // link (unlike the plain-text description field above, which
-        // Central Portal does NOT linkify even when it contains a URL).
-        url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/releases"
+        url = "https://github.com/ffmpegkit-maintained/ffmpeg/releases"
 
         licenses {
             license {
                 name = "GNU Lesser General Public License v3.0"
-                url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit/blob/main/LICENSE"
+                url = "https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE"
                 distribution = "repo"
             }
         }
@@ -80,9 +78,98 @@ mavenPublishing {
         }
 
         scm {
-            url = "https://github.com/ffmpegkit-maintained/ffmpeg-kit"
-            connection = "scm:git:git://github.com/ffmpegkit-maintained/ffmpeg-kit.git"
-            developerConnection = "scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg-kit.git"
+            url = "https://github.com/ffmpegkit-maintained/ffmpeg"
+            connection = "scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git"
+            developerConnection = "scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git"
+        }
+    }
+}
+
+// ── Redirect publications ─────────────────────────────────────────────────
+tasks.register('redirectSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+
+publishing {
+    publications {
+        mavenRedirectKit(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpegkit-71'
+            version    = publishVersion
+            artifact(tasks.named('redirectSourcesJar'))
+            artifact(tasks.named('redirectJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 7.1 (alias: ffmpegkit-71 → ffmpeg-71)'
+                description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg-71 in your project — same Android FFmpeg 7.1 library (ffmpegkit / ffmpeg-kit maintained fork).'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'ffmpegkit-maintained'
+                        name = 'ffmpegkit-maintained'
+                        url  = 'https://github.com/ffmpegkit-maintained'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg-71')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
+        }
+        mavenRedirectDash(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-71'
+            version    = publishVersion
+            artifact(tasks.named('redirectSourcesJar'))
+            artifact(tasks.named('redirectJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 7.1 (alias: ffmpeg-kit-71 → ffmpeg-71)'
+                description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg-71 in your project — same Android FFmpeg 7.1 library (ffmpegkit / ffmpeg-kit maintained fork).'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'ffmpegkit-maintained'
+                        name = 'ffmpegkit-maintained'
+                        url  = 'https://github.com/ffmpegkit-maintained'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg-71')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
         }
     }
 }

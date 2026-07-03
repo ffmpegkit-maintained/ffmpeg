@@ -8,7 +8,7 @@ version = project.findProperty('jitpack.version') ?: 'local'
 publishing {
     publications {
         aar(MavenPublication) {
-            artifactId = 'ffmpeg-kit'
+            artifactId = 'ffmpeg'
             artifact('ffmpeg-kit-android.aar') {
                 extension = 'aar'
             }
