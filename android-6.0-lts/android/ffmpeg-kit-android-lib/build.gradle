@@ -68,7 +68,7 @@ mavenPublishing {
         name = "ffmpeg / ffmpegkit / ffmpeg-kit — Android FFmpeg Library (6.0 LTS, Free)"
         description = "Android FFmpeg library — 6.0 LTS line, Free tier. VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Community-maintained fork of FFmpegKit (ffmpegkit / ffmpeg-kit). Paid tiers add H.264/H.265 encode, hardware codecs, TLS, OCR, Whisper transcription, SRT — see Project URL."
         inceptionYear = "2026"
-        url = "https://github.com/ffmpegkit-maintained/ffmpeg/releases"
+        url = "https://www.jokobee.com"
 
         licenses {
             license {
