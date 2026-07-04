@@ -5,6 +5,9 @@ before_install:
 install:
   - |
     set -e
+    echo "=== JITPACK ENV ==="
+    printenv | grep -i 'version\|jitpack\|ref\|tag' || true
+    echo "=== END ENV ==="
     TAG="${JITPACK_VERSION:-$(git describe --tags --abbrev=0 2>/dev/null)}"
     NUM=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     MAJOR=$(echo "$NUM" | cut -d. -f1)
