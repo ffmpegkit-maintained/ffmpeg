@@ -57,14 +57,14 @@ android {
 // files on Gumroad, not via this task, so this block being present is
 // harmless for them.
 mavenPublishing {
-    coordinates("dev.ffmpegkit-maintained", "ffmpeg-kit-free-71", "7.1.6")
+    coordinates("dev.ffmpegkit-maintained", "ffmpeg", "7.1.6")
 
     signAllPublications()
     publishToMavenCentral(true)
 
     pom {
-        name = "FFmpegKit 7.1 LTS (Free)"
-        description = "FFmpeg 7.1 LTS line - one of 4 tiers from the ffmpegkit-maintained FFmpegKit fork (Free-71/Basic-71/Full-71/Full GPL-71) - this is FREE: VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Coexists with the separate 6.0 LTS line (dev.ffmpegkit-maintained:ffmpeg-kit-free) - distinct artifact, does not replace it. Need H.264/H.265 encode, hardware codec access, TLS, images, OCR, subtitles or SRT? See the Basic-71/Full-71/Full GPL-71 tiers via the Project URL link below."
+        name = "ffmpeg / ffmpegkit / ffmpeg-kit — Android FFmpeg Library (7.1 LTS, Free)"
+        description = "Android FFmpeg library — 7.1 LTS line, Free tier. VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Community-maintained fork of FFmpegKit (ffmpegkit / ffmpeg-kit). Paid tiers add H.264/H.265 encode, hardware codecs, TLS, OCR, Whisper transcription, SRT — see Project URL."
         inceptionYear = "2026"
         // Points at the GitHub Release with the tier comparison table AND
         // direct Gumroad/Maven links together, not just the bare repo root

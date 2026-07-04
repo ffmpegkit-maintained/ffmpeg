@@ -10,7 +10,7 @@
 
 | Palier | Prix | Workflow CI | Tag déclencheur | Distribution |
 |---|---|---|---|---|
-| Free | $0 | `build-free.yml` | `v*-free` (ex: `v6.0.1-free`) | Maven Central, `dev.ffmpegkit-maintained:ffmpeg-kit-free` |
+| Free | $0 | `build-free.yml` | `v*-free` (ex: `v6.0.1-free`) | Maven Central, `dev.ffmpegkit-maintained:ffmpeg` |
 | Basic | $19 / $49 (team) | `build-basic.yml` | `v*-basic` | Gumroad `dmL2RoVC0QSkAHn9SG77aA==` (https://ffmpegkit.gumroad.com/l/iqppf) |
 | Full | $29 / $75 (team) | `build.yml` | `v*` (sans suffixe, exclut `-free`/`-basic`/`-gpl`) | Gumroad `sO6O3VHxKlhjlWtN4SjnCg==` (https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) |
 | Full GPL | $39 / $99 (team) | `build-gpl.yml` | `v*-gpl` | Gumroad `S0e0mRGg2W-aD3hH60qUvQ==` (https://ffmpegkit.gumroad.com/l/bctphn) |
@@ -19,7 +19,7 @@
 
 | Palier | Prix | Workflow CI | Tag déclencheur | Distribution |
 |---|---|---|---|---|
-| Free | $0 | `build-71-free.yml` | `v*-free71` (ex: `v7.1.5-free71`) | Maven Central, `dev.ffmpegkit-maintained:ffmpeg-kit-free-71` |
+| Free | $0 | `build-71-free.yml` | `v*-free71` (ex: `v7.1.5-free71`) | Maven Central, `dev.ffmpegkit-maintained:ffmpeg` |
 | Basic | $19 / $49 (team) | `build-71-basic.yml` | `v*-basic71` | Gumroad `62h6MdrsmlQGwn5T_4W2DQ==` (https://ffmpegkit.gumroad.com/l/msfal) |
 | Full | $29 / $75 (team) | `build-71-full.yml` | `v*-full71` | Gumroad `07IGSzVpUhfg8Fo9ejndJQ==` (https://ffmpegkit.gumroad.com/l/qnaow) |
 | Full GPL | $39 / $99 (team) | `build-71-gpl.yml` | `v*-gpl71` | Gumroad `5e-7hgVcyjhJLkM-kUkXAw==` (https://ffmpegkit.gumroad.com/l/cgfhid) |
@@ -28,7 +28,7 @@
 
 | Palier | Prix | Workflow CI | Tag déclencheur | Distribution |
 |---|---|---|---|---|
-| Free | $0 | `build-81-free.yml` | `v*-free81` | Maven Central, `dev.ffmpegkit-maintained:ffmpeg-kit-free-81` |
+| Free | $0 | `build-81-free.yml` | `v*-free81` | Maven Central, `dev.ffmpegkit-maintained:ffmpeg` |
 | Basic | $24 | `build-81-basic.yml` | `v*-basic81` | Gumroad `JAyvuyLzfKMAnL14Fx-DHg==` (https://ffmpegkit.gumroad.com/l/nxvxzc) |
 | Full | $34 / $89 (team) | `build-81-full.yml` | `v*-full81` | Gumroad `d0-0nZ-6DRF_U4FntcsqdA==` (https://ffmpegkit.gumroad.com/l/sogbka) — **ACTIF** (WhisperKit JNI implémenté et validé via [whisper-demo-android](https://github.com/ffmpegkit-maintained/whisper-demo-android)) |
 | Full GPL | $44 / $119 (team) | `build-81-gpl.yml` | `v*-gpl81` | Gumroad `hu_dGzO9SBO6VNTqfGhWdA==` (https://ffmpegkit.gumroad.com/l/axqjy) — **ACTIF** (WhisperKit JNI implémenté et validé via [whisper-demo-android](https://github.com/ffmpegkit-maintained/whisper-demo-android)) |
