@@ -68,6 +68,29 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg:7.1.5'
 implementation 'dev.ffmpegkit-maintained:ffmpeg:8.1.7'
 ```
 
+**Via JitPack (alternative to Maven Central):**
+
+```gradle
+// settings.gradle — add JitPack repository
+dependencyResolutionManagement {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+```gradle
+// app/build.gradle
+// 6.0 LTS
+implementation 'com.github.ffmpegkit-maintained:ffmpeg:6.0.1'
+
+// 7.1 LTS
+implementation 'com.github.ffmpegkit-maintained:ffmpeg:7.1.5'
+
+// 8.1 LTS (FFmpeg 8.x "Hoare" — latest stable, NDK r27c)
+implementation 'com.github.ffmpegkit-maintained:ffmpeg:8.1.7'
+```
+
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg/releases) for build systems that don't use Maven Central.
 
 > **Need H.264/H.265 encode, hardware MediaCodec, or TLS?** The [Basic tier ($24)](https://ffmpegkit.gumroad.com/l/nxvxzc) adds those. Need **on-device speech recognition or subtitle generation**? The [Full ($34)](https://ffmpegkit.gumroad.com/l/sogbka) and [Full GPL ($49)](https://ffmpegkit.gumroad.com/l/axqjy) tiers add WhisperKit — see [docs/WHISPERKIT.md](docs/WHISPERKIT.md).
