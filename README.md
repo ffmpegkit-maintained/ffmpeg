@@ -46,13 +46,13 @@ This fork is **Android-only, intentionally**. Maintaining a single platform well
 
 Three build trees are published and maintained in parallel — pick the FFmpeg version that suits your project:
 
-| Line | FFmpeg | Free tier (Maven Central) | Paid tiers (Gumroad) |
+| Line | FFmpeg | Free tier (Maven Central) | Paid tiers (Jokobee) |
 |---|---|---|---|
-| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg:6.0.3` | [Basic](https://ffmpegkit.gumroad.com/l/iqppf) / [Full](https://ffmpegkit.gumroad.com/l/ffmpegkit-lts-android) / [Full GPL](https://ffmpegkit.gumroad.com/l/bctphn) |
-| **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg:7.1.5` | [Basic](https://ffmpegkit.gumroad.com/l/msfal) / [Full](https://ffmpegkit.gumroad.com/l/qnaow) / [Full GPL](https://ffmpegkit.gumroad.com/l/cgfhid) |
-| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg:8.1.7` | [Basic](https://ffmpegkit.gumroad.com/l/nxvxzc) / [Full](https://ffmpegkit.gumroad.com/l/sogbka) / [Full GPL](https://ffmpegkit.gumroad.com/l/axqjy) |
+| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg:6.0.3` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
+| **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg:7.1.5` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
+| **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg:8.1.7` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
 
-All lines use the same API surface, compileSdk 35, and 16 KB page alignment. The 6.0 and 7.1 lines use NDK r26c; the 8.1 line uses NDK r27c. Each LTS line has its own dedicated Gumroad products — browse the full catalogue at **[ffmpegkit.gumroad.com](https://ffmpegkit.gumroad.com)**.
+All lines use the same API surface, compileSdk 35, and 16 KB page alignment. The 6.0 and 7.1 lines use NDK r26c; the 8.1 line uses NDK r27c. Each LTS line has its own dedicated tiers — browse the full catalogue at **[jokobee.com/ffmpegkit](https://www.jokobee.com/ffmpegkit)**.
 
 ### Add the Free tier
 
@@ -94,9 +94,9 @@ implementation 'com.github.ffmpegkit-maintained:ffmpeg:8.1.7'
 
 **Direct download:** the prebuilt `.aar` is also attached to each [GitHub release](https://github.com/ffmpegkit-maintained/ffmpeg/releases) for build systems that don't use Maven Central.
 
-> **Need H.264/H.265 encode, hardware MediaCodec, or TLS?** The [Basic tier ($24)](https://ffmpegkit.gumroad.com/l/nxvxzc) adds those. Need **on-device speech recognition or subtitle generation**? The [Full ($34)](https://ffmpegkit.gumroad.com/l/sogbka) and [Full GPL ($49)](https://ffmpegkit.gumroad.com/l/axqjy) tiers add WhisperKit — see [docs/WHISPERKIT.md](docs/WHISPERKIT.md).
+> **Need H.264/H.265 encode, hardware MediaCodec, or TLS?** The [Basic tier ($24)](https://www.jokobee.com/ffmpegkit) adds those. Need **on-device speech recognition or subtitle generation**? The [Full ($34)](https://www.jokobee.com/ffmpegkit) and [Full GPL ($44)](https://www.jokobee.com/ffmpegkit) tiers add WhisperKit — see [docs/WHISPERKIT.md](docs/WHISPERKIT.md).
 
-For the paid tiers, download the `.aar` from [Gumroad](https://ffmpegkit.gumroad.com) and drop it in `app/libs/`, then:
+For the paid tiers, download the `.aar` from [Jokobee](https://www.jokobee.com/ffmpegkit) and drop it in `app/libs/`, then:
 
 ```gradle
 // app/build.gradle
@@ -221,7 +221,7 @@ Four separately-built AARs, so you only pay for and ship the codec coverage your
 
 | | **Free** | **Basic** | **Full** | **Full GPL** |
 |---|---|---|---|---|
-| Distribution | Maven Central, free | Gumroad, $19 (6.0/7.1) · $24 (8.1) | Gumroad, $29 (6.0/7.1) · $34 (8.1) | Gumroad, $39 (6.0/7.1) · $44 (8.1) |
+| Distribution | Maven Central, free | Jokobee, $19 (6.0/7.1) · $24 (8.1) | Jokobee, $29 (6.0/7.1) · $34 (8.1) | Jokobee, $39 (6.0/7.1) · $44 (8.1) |
 | License | LGPL-3.0 | LGPL-3.0 | LGPL-3.0 | **GPL-3.0** ⚠️ |
 | Build workflows (6.0 / 7.1 / 8.1) | `build-free.yml` / `build-71-free.yml` / `build-81-free.yml` | `build-basic.yml` / `build-71-basic.yml` / `build-81-basic.yml` | `build.yml` / `build-71-full.yml` / `build-81-full.yml` ¹ | `build-gpl.yml` / `build-71-gpl.yml` / `build-81-gpl.yml` ¹ |
 | Maven coordinates (6.0) | `dev.ffmpegkit-maintained:ffmpeg:6.0.1` | — | — | — |

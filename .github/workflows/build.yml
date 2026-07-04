@@ -215,7 +215,7 @@ jobs:
           done < <(find prebuilt -name "*.so")
           exit "$fail"
 
-      # No actions/upload-artifact here on purpose: this is a paid Gumroad
+      # No actions/upload-artifact here on purpose: this is a paid Jokobee
       # tier, and Actions artifacts on a public repo are downloadable by any
       # signed-in GitHub user for free, not just collaborators - confirmed
       # directly and fixed by deleting everything already exposed that way.

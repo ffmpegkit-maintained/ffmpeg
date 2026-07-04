@@ -192,7 +192,7 @@ jobs:
           fi
           echo "GPLv3 license confirmed bundled, both at the source resource and inside the final .aar."
 
-      # No actions/upload-artifact here on purpose - paid Gumroad tier,
+      # No actions/upload-artifact here on purpose - paid Jokobee tier,
       # Actions artifacts on a public repo are downloadable by any signed-in
       # GitHub user for free. The build step above already pushed the
       # finished .aar to ci-cache-private's "71-gpl" branch as its final

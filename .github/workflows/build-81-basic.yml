@@ -180,7 +180,7 @@ jobs:
           done < <(find prebuilt -name "*.so")
           exit "$fail"
 
-      # No actions/upload-artifact here on purpose - paid Gumroad tier,
+      # No actions/upload-artifact here on purpose - paid Jokobee tier,
       # Actions artifacts on a public repo are downloadable by any signed-in
       # GitHub user for free. The build step above already pushed the
       # finished .aar to ci-cache-private's "81-basic" branch as its final

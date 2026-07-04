@@ -54,7 +54,7 @@ android {
 // Only the Free tier (built by .github/workflows/build-free.yml) actually
 // invokes ./gradlew publishAndReleaseToMavenCentral - the other three tiers
 // (Basic/Full/Full GPL) share this same module but are distributed as
-// files on Gumroad, not via this task, so this block being present is
+// files on Jokobee, not via this task, so this block being present is
 // harmless for them.
 mavenPublishing {
     coordinates("dev.ffmpegkit-maintained", "ffmpeg", "8.1.7")
@@ -67,7 +67,7 @@ mavenPublishing {
         description = "Android FFmpeg library — 8.1 LTS line, Free tier. VP8/VP9 + AV1 encode/decode (libvpx, libaom, dav1d), Opus/Vorbis/Speex audio, software-only. Community-maintained fork of FFmpegKit (ffmpegkit / ffmpeg-kit). Paid tiers add H.264/H.265 encode, hardware codecs, TLS, OCR, Whisper transcription, SRT — see Project URL."
         inceptionYear = "2026"
         // Points at the GitHub Release with the tier comparison table AND
-        // direct Gumroad/Maven links together, not just the bare repo root
+        // direct Jokobee/Maven links together, not just the bare repo root
         // - Maven Central renders this as an actual clickable "Project URL"
         // link (unlike the plain-text description field above, which
         // Central Portal does NOT linkify even when it contains a URL).
