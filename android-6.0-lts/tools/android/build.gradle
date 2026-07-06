@@ -82,9 +82,9 @@ mavenPublishing {
 
         developers {
             developer {
-                id = "ffmpegkit-maintained"
-                name = "ffmpegkit-maintained"
-                url = "https://github.com/ffmpegkit-maintained"
+                id = "jokobee"
+                name = "Jokobee"
+                url = "https://www.jokobee.com"
                 email = "contact@jokobee.com"
             }
         }
