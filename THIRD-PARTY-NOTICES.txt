@@ -1,0 +1,48 @@
+================================================================================
+THIRD-PARTY NOTICES — FFmpegKit Android (Free)
+================================================================================
+Include this file in your application's "Open Source Licenses" or "About"
+screen, or bundle it as an asset accessible to the user. This is required
+by the LGPL license under which FFmpeg is distributed.
+
+Your application code is NOT affected by the LGPL. You may keep your
+source code proprietary and sell your application commercially.
+
+--------------------------------------------------------------------------------
+FFMPEG
+--------------------------------------------------------------------------------
+FFmpeg is a collection of libraries and tools to process multimedia content.
+Copyright (c) the FFmpeg contributors.
+
+FFmpeg is licensed under the GNU Lesser General Public License (LGPL)
+version 2.1 or later, with portions under LGPL version 3.
+
+FFmpeg is a trademark of Fabrice Bellard, originator of the FFmpeg project.
+For more information: https://ffmpeg.org
+
+--------------------------------------------------------------------------------
+FFMPEGKIT
+--------------------------------------------------------------------------------
+FFmpegKit is an Android wrapper for FFmpeg.
+Original project copyright (c) Taner Sener.
+Maintained by the ffmpegkit-maintained project.
+
+Licensed under the GNU Lesser General Public License (LGPL) version 3.
+
+--------------------------------------------------------------------------------
+SOURCE CODE
+--------------------------------------------------------------------------------
+The complete corresponding source code is available at:
+    https://github.com/ffmpegkit-maintained/ffmpeg-kit
+
+--------------------------------------------------------------------------------
+LIBRARY REPLACEMENT (LGPL section 4)
+--------------------------------------------------------------------------------
+The FFmpeg libraries are included as dynamically linked shared libraries
+(.so files) inside the AAR. They are not statically linked into the
+application code. A user may produce a modified version from the source
+code above and replace them, in accordance with the terms of the LGPL.
+
+--------------------------------------------------------------------------------
+Build scripts and packaging: copyright (c) 2026 Jokobee (www.jokobee.com)
+================================================================================

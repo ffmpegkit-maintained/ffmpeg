@@ -109,3 +109,10 @@ dependencies {
     testImplementation "androidx.test.ext:junit:1.1.5"
     testImplementation 'org.json:json:20230618'
 }
+
+// --- THIRD-PARTY-NOTICES : bundle automatique dans les assets de l'AAR ---
+tasks.register("copyThirdPartyNotices", Copy) {
+    from rootProject.file("../../THIRD-PARTY-NOTICES.txt")
+    into layout.projectDirectory.dir("src/main/assets")
+}
+tasks.named("preBuild") { dependsOn "copyThirdPartyNotices" }

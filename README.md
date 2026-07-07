@@ -300,3 +300,10 @@ See [docs/PATCH-NOTES.md](docs/PATCH-NOTES.md) and the [GitHub wiki](https://git
 ## License
 
 This project is distributed under the **GNU Lesser General Public License v3.0**. See [LICENSE](LICENSE) for the full text.
+
+## Third-Party Notices
+
+Third-party components bundled or built into this project retain their original
+licenses. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), which is also copied
+into the AAR assets at build time (readable at runtime via
+`context.assets.open("THIRD-PARTY-NOTICES.txt")`).
