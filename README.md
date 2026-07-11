@@ -48,7 +48,7 @@ Three build trees are published and maintained in parallel — pick the FFmpeg v
 
 | Line | FFmpeg | Free tier (Maven Central) | Paid tiers (Jokobee) |
 |---|---|---|---|
-| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg:6.0.3` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
+| **6.0 LTS** | n6.0 (stable, long track record) | `dev.ffmpegkit-maintained:ffmpeg:6.0.1` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
 | **7.1 LTS** | n7.1.5 (newer codecs, same API) | `dev.ffmpegkit-maintained:ffmpeg:7.1.5` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
 | **8.1 LTS** | n8.1.2 (latest stable, FFmpeg 8.x "Hoare") — **NDK r27c** | `dev.ffmpegkit-maintained:ffmpeg:8.1.7` | [Basic](https://www.jokobee.com/ffmpegkit) / [Full](https://www.jokobee.com/ffmpegkit) / [Full GPL](https://www.jokobee.com/ffmpegkit) |
 
@@ -60,7 +60,7 @@ All lines use the same API surface, compileSdk 35, and 16 KB page alignment. The
 
 ```gradle
 // 6.0 LTS
-implementation 'dev.ffmpegkit-maintained:ffmpeg:6.0.3'
+implementation 'dev.ffmpegkit-maintained:ffmpeg:6.0.1'
 
 // 7.1 LTS
 implementation 'dev.ffmpegkit-maintained:ffmpeg:7.1.5'

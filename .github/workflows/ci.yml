@@ -1,0 +1,44 @@
+name: CI (docs check)
+
+# Lightweight, auto-triggered check — separate from the 12 tier/line build
+# workflows (all tag-triggered, heavy FFmpeg compiles). Three LTS lines
+# (6.0, 7.1, 8.1) coexist under the same Maven Central artifactId
+# (dev.ffmpegkit-maintained:ffmpeg), each with its own version, so this
+# checks every version README.md advertises against what's actually live.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs-version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docs version consistency check
+        run: |
+          LIVE=$(curl -sf "https://repo1.maven.org/maven2/dev/ffmpegkit-maintained/ffmpeg/maven-metadata.xml" \
+            | grep -oP '<version>\K[^<]+')
+          if [ -z "$LIVE" ]; then
+            echo "::error::could not fetch published versions from Maven Central metadata"
+            exit 1
+          fi
+          echo "Live on Maven Central (dev.ffmpegkit-maintained:ffmpeg):"
+          echo "$LIVE"
+
+          fail=0
+          # Every version README.md claims for this artifact must actually be published.
+          for v in $(grep -oP "dev\.ffmpegkit-maintained:ffmpeg:\K[0-9]+\.[0-9]+\.[0-9]+" README.md | sort -u); do
+            if ! echo "$LIVE" | grep -qx "$v"; then
+              echo "::error file=README.md::README references dev.ffmpegkit-maintained:ffmpeg:$v, but that version is not published on Maven Central — likely stale."
+              fail=1
+            fi
+          done
+
+          if [ "$fail" -eq 1 ]; then
+            echo "::error::Docs mention a Maven Central version that isn't actually live. Update README.md to match a published version (see the <versions> list above)."
+            exit 1
+          fi
+          echo "README.md's Maven Central version mentions are all live."
