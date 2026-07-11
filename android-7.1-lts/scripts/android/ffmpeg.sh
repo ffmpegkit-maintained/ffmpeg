@@ -338,6 +338,15 @@ if [ "$GPL_ENABLED" == "yes" ]; then
   CONFIGURE_POSTFIX+=" --enable-gpl"
 fi
 
+# CVE-2025-59730/59734 (SANM decoder, heap overflow): upstream fixed it in FFmpeg 8.0 only,
+# never backported to any 6.x or 7.1.x branch (verified: absent from n7.1.5's source by direct
+# inspection). SANM (LucasArts SMUSH/ANIM) has no real Android use case, so it's disabled
+# outright rather than left open. Applies to all tiers (Free/Basic/Full/Full-GPL share this
+# script). Note: MagicYUV (CVE-2026-8461), DASH (CVE-2025-59728), EXR (CVE-2025-59733/31/32),
+# and rtpenc_h264_hevc (CVE-2026-30754) were already fixed upstream in n7.1.5 itself -- verified
+# by source inspection, no action needed for those on this line.
+CONFIGURE_POSTFIX+=" --disable-decoder=sanm"
+
 export LDFLAGS+=" -L${ANDROID_NDK_ROOT}/platforms/android-${API}/arch-${TOOLCHAIN_ARCH}/usr/lib"
 
 # LINKING WITH ANDROID LTS SUPPORT LIBRARY IS NECESSARY FOR API < 18
