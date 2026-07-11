@@ -33,7 +33,13 @@ get_library_source() {
     ;;
   ffmpeg)
     SOURCE_REPO_URL="https://github.com/arthenica/FFmpeg"
-    SOURCE_ID="n6.0"
+    # Rebased from n6.0 to n6.1.6 (2026-07-11): upstream abandoned the strict 6.0.x branch
+    # after n6.0.1, backporting security fixes only to 6.1.x. n6.1.6 closes CVE-2026-8461
+    # (MagicYUV heap OOB write, CVSS 8.8), CVE-2025-59728 (DASH), CVE-2025-59733/31/32 (EXR),
+    # and CVE-2026-30754 (rtpenc_h264_hevc) -- all verified present in n6.1.6's source by
+    # direct inspection, not by trusting ffmpeg.org/security.html (which lags behind actual
+    # branch backports).
+    SOURCE_ID="n6.1.6"
     SOURCE_TYPE="TAG"
     ;;
   fontconfig)
