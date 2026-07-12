@@ -5,9 +5,16 @@ before_install:
 install:
   - |
     set -e
-    # JITPACK_VERSION is empty in some JitPack environments; fall back to version file
-    RAW="${JITPACK_VERSION:-$(cat JITPACK_VERSION_FILE 2>/dev/null)}"
+    # JITPACK_VERSION is empty in some JitPack environments. Fall back to the tag JitPack
+    # actually checked out (self-contained, no file to keep in sync -- a prior attempt at a
+    # static JITPACK_VERSION_FILE fallback was never actually created/maintained and silently
+    # broke every build that hit the empty-env-var case).
+    RAW="${JITPACK_VERSION:-$(git describe --tags --exact-match 2>/dev/null)}"
     NUM=$(echo "$RAW" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [ -z "$NUM" ]; then
+      echo "::error::could not determine version: JITPACK_VERSION empty and git describe found no exact tag match"
+      exit 1
+    fi
     MAJOR=$(echo "$NUM" | cut -d. -f1)
     RELEASE_TAG="v${NUM}-lts-android"
 
