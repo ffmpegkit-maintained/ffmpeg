@@ -1,0 +1,171 @@
+name: Build 8.1 LTS (Free Audio variant — Maven alias source)
+
+# Publishes as ffmpeg-kit-audio: lame, libilbc, libvorbis, opencore-amr,
+# opus, shine, soxr, speex, twolame, vo-amrwbenc + MediaCodec/zlib (system,
+# universal). Source of truth: project-ffmpeg-free-tier-expansion-plan
+# memory (Arthenica's archived README table).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ffmpeg-kit 8.1 LTS (free-audio, arm64-v8a + x86_64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: android-8.1-lts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config curl git \
+            build-essential yasm nasm gperf texinfo bison ragel \
+            python3 python3-pip unzip zip wget meson ninja-build \
+            doxygen cmake autogen autopoint groff gtk-doc-tools libtasn1-bin
+
+      - name: Install Android platform 35
+        run: |
+          set +o pipefail
+          yes | "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          set -o pipefail
+          "${ANDROID_HOME}"/cmdline-tools/latest/bin/sdkmanager "platforms;android-35"
+
+      - name: Cache Android NDK r27c
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ~/.ndk
+          key: ndk-r27c-linux
+
+      - name: Download Android NDK r27c
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          curl -s "https://dl.google.com/android/repository/android-ndk-r27c-linux.zip" -o ndk.zip
+          unzip -q -o ndk.zip -d "${HOME}/.ndk"
+
+      - name: Export ANDROID_NDK_ROOT
+        run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
+
+      - name: Restore latest build checkpoint from ci-cache-81-free-audio branch
+        run: |
+          if git ls-remote --exit-code --heads origin ci-cache-81-free-audio >/dev/null 2>&1; then
+            git fetch --depth=1 origin ci-cache-81-free-audio
+            git archive FETCH_HEAD | tar -x
+          fi
+
+      - name: Build free-audio variant (arm64-v8a + x86_64)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          checkpoint() {
+            flock /tmp/checkpoint.lock -c '
+              tmp=$(mktemp -d)
+              cp -r prebuilt "$tmp/" 2>/dev/null
+              cp -r src "$tmp/" 2>/dev/null
+              ( cd "$tmp" \
+                && git init -q -b ci-cache-81-free-audio \
+                && git add -A \
+                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
+                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-81-free-audio )
+              rm -rf "$tmp"
+            '
+          }
+          ( while true; do sleep 120; checkpoint || true; done ) &
+          CHECKPOINT_PID=$!
+          touch build.log
+          set +e
+          ./android.sh --enable-lame --enable-libilbc --enable-libvorbis --enable-opencore-amr \
+            --enable-opus --enable-shine --enable-soxr --enable-speex --enable-twolame --enable-vo-amrwbenc \
+            --enable-android-media-codec --enable-android-zlib \
+            --disable-arm-v7a --disable-arm-v7a-neon --disable-x86
+          BUILD_EXIT=$?
+          kill "$CHECKPOINT_PID" 2>/dev/null || true
+          wait "$CHECKPOINT_PID" 2>/dev/null || true
+          checkpoint || true
+          exit "$BUILD_EXIT"
+
+      - name: Print build log on failure
+        if: failure()
+        run: cat build.log || true
+
+      - name: Print ffbuild config log on failure
+        if: failure()
+        run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
+
+      - name: Verify 16 KB page size alignment
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r so; do
+            min_exp=99
+            while IFS= read -r exp; do
+              [[ -z "$exp" ]] && continue
+              (( exp < min_exp )) && min_exp=$exp
+            done < <(objdump -p "$so" | grep -A1 LOAD | grep -oE 'align 2\*\*[0-9]+' | grep -oE '[0-9]+$')
+            echo "$so: align=2**${min_exp}"
+            if (( min_exp < 14 )); then
+              echo "::error file=${so}::not 16 KB aligned"
+              fail=1
+            fi
+          done < <(find prebuilt -name "*.so")
+          exit "$fail"
+
+      - name: Verify tier content matches "audio" exactly (binary check)
+        run: |
+          set -e
+          fail=0
+          for term in tesseract leptonica chromaprint whisper ggml libass gnutls; do
+            hits=$(grep -a -il -- "$term" $(find prebuilt -name "*.so") 2>/dev/null || true)
+            if [[ -n "$hits" ]]; then
+              echo "::error::found '$term' in: $hits (must not be in audio)"
+              fail=1
+            else
+              echo "OK: '$term' absent"
+            fi
+          done
+          for symbol in x264_encoder_open x265_encoder_open xvid_encore; do
+            hits=$(grep -a -il -- "$symbol" $(find prebuilt -name "*.so") 2>/dev/null || true)
+            if [[ -n "$hits" ]]; then
+              echo "::error::found symbol '$symbol' in: $hits (must not be in audio)"
+              fail=1
+            else
+              echo "OK: '$symbol' absent"
+            fi
+          done
+          if find prebuilt -iname "*whisper*" | grep -q .; then
+            echo "::error::a libwhisperkit*.so file is present"
+            fail=1
+          fi
+          for term in mediacodec; do
+            hits=$(grep -a -il -- "$term" $(find prebuilt -name "*.so") 2>/dev/null || true)
+            if [[ -z "$hits" ]]; then
+              echo "::error::'$term' not found — audio build is incomplete"
+              fail=1
+            else
+              echo "OK: '$term' present in: $hits"
+            fi
+          done
+          exit "$fail"
+
+      - name: Upload AAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-kit-81-free-audio-arm64-v8a-x86_64
+          path: android-8.1-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
