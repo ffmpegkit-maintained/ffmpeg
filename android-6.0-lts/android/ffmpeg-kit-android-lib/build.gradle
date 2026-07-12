@@ -262,6 +262,34 @@ tasks.register('videoJavadocJar', Jar) {
     archiveClassifier = 'javadoc'
 }
 
+tasks.register('fullSourcesJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-full'
+    archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+tasks.register('fullJavadocJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-full'
+    archiveClassifier = 'javadoc'
+}
+tasks.register('fullGplSourcesJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-full-gpl'
+    archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+tasks.register('fullGplJavadocJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-full-gpl'
+    archiveClassifier = 'javadoc'
+}
+tasks.register('minGplSourcesJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-min-gpl'
+    archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+tasks.register('minGplJavadocJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-min-gpl'
+    archiveClassifier = 'javadoc'
+}
+
 publishing {
     publications {
         mavenHttps(MavenPublication) {
@@ -274,8 +302,8 @@ publishing {
             artifact(tasks.named('httpsSourcesJar'))
             artifact(tasks.named('httpsJavadocJar'))
             pom {
-                name        = 'FFmpegKit Https'
-                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls), Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                name        = 'FFmpegKit Https — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-https (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. TLS/https:// URL support (gmp+gnutls). Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
                 inceptionYear = '2026'
                 url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
                 licenses {
@@ -310,8 +338,8 @@ publishing {
             artifact(tasks.named('httpsGplSourcesJar'))
             artifact(tasks.named('httpsGplJavadocJar'))
             pom {
-                name        = 'FFmpegKit Https GPL'
-                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https-gpl (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls) plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                name        = 'FFmpegKit Https GPL — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-https-gpl (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. TLS/https:// URL support (gmp+gnutls) plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
                 inceptionYear = '2026'
                 url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
                 licenses {
@@ -346,8 +374,8 @@ publishing {
             artifact(tasks.named('minSourcesJar'))
             artifact(tasks.named('minJavadocJar'))
             pom {
-                name        = 'FFmpegKit Min'
-                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-min (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. No external codecs -- Android system MediaCodec only. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                name        = 'FFmpegKit Min — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-min (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. No external codecs -- Android system MediaCodec only. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
                 inceptionYear = '2026'
                 url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
                 licenses {
@@ -382,8 +410,8 @@ publishing {
             artifact(tasks.named('audioSourcesJar'))
             artifact(tasks.named('audioJavadocJar'))
             pom {
-                name        = 'FFmpegKit Audio'
-                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-audio (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. Audio codecs: lame, libilbc, libvorbis, opencore-amr, opus, shine, soxr, speex, twolame, vo-amrwbenc. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                name        = 'FFmpegKit Audio — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-audio (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Audio codecs: lame, libilbc, libvorbis, opencore-amr, opus, shine, soxr, speex, twolame, vo-amrwbenc. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
                 inceptionYear = '2026'
                 url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
                 licenses {
@@ -418,14 +446,122 @@ publishing {
             artifact(tasks.named('videoSourcesJar'))
             artifact(tasks.named('videoJavadocJar'))
             pom {
-                name        = 'FFmpegKit Video'
-                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-video (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. Video codecs: dav1d, fontconfig, freetype, fribidi, kvazaar, libass, libiconv, libtheora, libvpx, libwebp, snappy, zimg. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                name        = 'FFmpegKit Video — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-video (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Video codecs: dav1d, fontconfig, freetype, fribidi, kvazaar, libass, libiconv, libtheora, libvpx, libwebp, snappy, zimg. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
                 inceptionYear = '2026'
                 url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
                 licenses {
                     license {
                         name         = 'GNU Lesser General Public License v3.0'
                         url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+            }
+        }
+        mavenFull(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-full'
+            version    = publishVersion
+            artifact("${projectDir}/prebuilt-aars/ffmpeg-kit-full.aar") {
+                extension = 'aar'
+            }
+            artifact(tasks.named('fullSourcesJar'))
+            artifact(tasks.named('fullJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Full — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-full (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Everything: audio + video + TLS/https codecs combined (no GPL). Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+            }
+        }
+        mavenFullGpl(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-full-gpl'
+            version    = publishVersion
+            artifact("${projectDir}/prebuilt-aars/ffmpeg-kit-full-gpl.aar") {
+                extension = 'aar'
+            }
+            artifact(tasks.named('fullGplSourcesJar'))
+            artifact(tasks.named('fullGplJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Full GPL — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-full-gpl (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Everything: audio + video + TLS/https codecs plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE.GPLv3'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+            }
+        }
+        mavenMinGpl(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-min-gpl'
+            version    = publishVersion
+            artifact("${projectDir}/prebuilt-aars/ffmpeg-kit-min-gpl.aar") {
+                extension = 'aar'
+            }
+            artifact(tasks.named('minGplSourcesJar'))
+            artifact(tasks.named('minGplJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Min GPL — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+                description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-min-gpl (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. GPL video encoders: x264, x265, xvidcore, vid.stab. No audio libs, no TLS. GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE.GPLv3'
                         distribution = 'repo'
                     }
                 }
@@ -453,6 +589,9 @@ signing {
     sign(publishing.publications.mavenMin)
     sign(publishing.publications.mavenAudio)
     sign(publishing.publications.mavenVideo)
+    sign(publishing.publications.mavenFull)
+    sign(publishing.publications.mavenFullGpl)
+    sign(publishing.publications.mavenMinGpl)
 }
 
 // vanniktech's mavenPublishing{} pom{} block (top of this file) applies to
@@ -469,24 +608,36 @@ signing {
 // executes last and wins the final overwrite.
 afterEvaluate {
     publishing.publications.mavenHttps.pom {
-        name = 'FFmpegKit Https'
-        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls), Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+        name = 'FFmpegKit Https — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-https (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. TLS/https:// URL support (gmp+gnutls). Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
     }
     publishing.publications.mavenHttpsGpl.pom {
-        name = 'FFmpegKit Https GPL'
-        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https-gpl (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls) plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+        name = 'FFmpegKit Https GPL — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-https-gpl (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. TLS/https:// URL support (gmp+gnutls) plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
     }
     publishing.publications.mavenMin.pom {
-        name = 'FFmpegKit Min'
-        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-min (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. No external codecs -- Android system MediaCodec only. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+        name = 'FFmpegKit Min — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-min (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. No external codecs -- Android system MediaCodec only. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
     }
     publishing.publications.mavenAudio.pom {
-        name = 'FFmpegKit Audio'
-        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-audio (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. Audio codecs: lame, libilbc, libvorbis, opencore-amr, opus, shine, soxr, speex, twolame, vo-amrwbenc. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+        name = 'FFmpegKit Audio — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-audio (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Audio codecs: lame, libilbc, libvorbis, opencore-amr, opus, shine, soxr, speex, twolame, vo-amrwbenc. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
     }
     publishing.publications.mavenVideo.pom {
-        name = 'FFmpegKit Video'
-        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-video (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. Video codecs: dav1d, fontconfig, freetype, fribidi, kvazaar, libass, libiconv, libtheora, libvpx, libwebp, snappy, zimg. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+        name = 'FFmpegKit Video — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-video (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Video codecs: dav1d, fontconfig, freetype, fribidi, kvazaar, libass, libiconv, libtheora, libvpx, libwebp, snappy, zimg. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+    }
+    publishing.publications.mavenFull.pom {
+        name = 'FFmpegKit Full — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-full (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Everything: audio + video + TLS/https codecs combined (no GPL). Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+    }
+    publishing.publications.mavenFullGpl.pom {
+        name = 'FFmpegKit Full GPL — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-full-gpl (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. Everything: audio + video + TLS/https codecs plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+    }
+    publishing.publications.mavenMinGpl.pom {
+        name = 'FFmpegKit Min GPL — Maintained Drop-in Replacement (ffmpeg-kit for Android, SDK 35, 16 KB)'
+        description = 'FFmpegKit / ffmpeg-kit, actively maintained. Drop-in replacement for com.arthenica:ffmpeg-kit-min-gpl (Arthenica\'s fork, retired April 2025) -- same com.arthenica.ffmpegkit API, just change the groupId. GPL video encoders: x264, x265, xvidcore, vid.stab. No audio libs, no TLS. GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
     }
     // Same fix applied retroactively to the redirect aliases (already live on
     // Maven Central as of 6.0.3 with the WRONG name/description -- that
