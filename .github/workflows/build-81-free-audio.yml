@@ -131,7 +131,7 @@ jobs:
         run: |
           set -e
           fail=0
-          for term in tesseract leptonica chromaprint whisper ggml libass gnutls; do
+          for term in tesseract leptonica chromaprint whisper ggml libass; do
             hits=$(grep -a -il -- "$term" $(find prebuilt -name "*.so") 2>/dev/null || true)
             if [[ -n "$hits" ]]; then
               echo "::error::found '$term' in: $hits (must not be in audio)"
@@ -140,7 +140,10 @@ jobs:
               echo "OK: '$term' absent"
             fi
           done
-          for symbol in x264_encoder_open x265_encoder_open xvid_encore; do
+          # gnutls: check the real API symbol, not the bare word -- see
+          # feedback-binary-string-verification-false-positives memory (same class as
+          # the x264 SEI decoder false positive).
+          for symbol in x264_encoder_open x265_encoder_open xvid_encore gnutls_init gnutls_handshake; do
             hits=$(grep -a -il -- "$symbol" $(find prebuilt -name "*.so") 2>/dev/null || true)
             if [[ -n "$hits" ]]; then
               echo "::error::found symbol '$symbol' in: $hits (must not be in audio)"
