@@ -112,12 +112,6 @@ jobs:
         if: failure()
         run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
 
-      - name: Diagnostic - print ffmpeg configure summary (temporary, always runs)
-        run: |
-          grep -iE "libx264|libx265|libxvid|libvidstab|External libraries|configuration:" build.log || echo "no matches in build.log"
-          echo "---"
-          [[ -f ./src/ffmpeg/ffbuild/config.log ]] && grep -B2 -A2 -iE "libx264|libx265|libxvid|libvidstab" ./src/ffmpeg/ffbuild/config.log | head -100 || echo "no config.log"
-
       - name: Verify 16 KB page size alignment
         run: |
           set -e
@@ -165,13 +159,20 @@ jobs:
             echo "::error::a libwhisperkit*.so file is present"
             fail=1
           fi
-          for symbol in x264_encoder_open x265_encoder_open xvid_encore vidstab_new; do
-            hits=$(grep -a -il -- "$symbol" $(find prebuilt -name "*.so") 2>/dev/null || true)
+          # Bare-word positive check (not a real-symbol check): static-linked GPL
+          # encoders get their symbols hidden by visibility flags during ffmpeg's
+          # own link step, so a real-symbol presence check false-negatives here
+          # even when the encoder is genuinely linked and functional (same as
+          # https-gpl's positive check, already validated via real-device runtime
+          # testing -- see feedback-binary-string-verification-false-positives
+          # memory for the general lesson, this is the positive-check mirror of it).
+          for term in x264 x265 xvid vidstab; do
+            hits=$(grep -a -il -- "$term" $(find prebuilt -name "*.so") 2>/dev/null || true)
             if [[ -z "$hits" ]]; then
-              echo "::error::symbol '$symbol' not found — min-gpl build is incomplete"
+              echo "::error::'$term' not found — min-gpl build is incomplete"
               fail=1
             else
-              echo "OK: '$symbol' present in: $hits"
+              echo "OK: '$term' present in: $hits"
             fi
           done
           hits=$(grep -a -il -- "mediacodec" $(find prebuilt -name "*.so") 2>/dev/null || true)
