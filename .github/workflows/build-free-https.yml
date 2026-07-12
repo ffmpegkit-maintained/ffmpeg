@@ -165,7 +165,7 @@ jobs:
           set -e
           fail=0
           echo "=== Negative: paid-tier-only strings must be ABSENT ==="
-          for term in tesseract leptonica chromaprint whisper ggml libass x264 x265 xvidcore vidstab; do
+          for term in tesseract leptonica chromaprint whisper ggml libass; do
             hits=$(grep -a -il -- "$term" $(find prebuilt -name "*.so") 2>/dev/null || true)
             if [[ -n "$hits" ]]; then
               echo "::error::found '$term' in: $hits (must not be in https)"
@@ -178,6 +178,20 @@ jobs:
             echo "::error::a libwhisperkit*.so file is present — must not be in a Free build"
             fail=1
           fi
+          # GPL encoders: check real API symbols, not bare "x264"/"x265" -- FFmpeg's own
+          # H.264 SEI decoder recognizes and logs x264's "x264 - core N" version string
+          # embedded by ANY x264-encoded source video, in every build that can decode
+          # H.264 at all (i.e. all of them) -- a naive substring match false-positives on
+          # that decoder-side string even when the encoder itself was never linked.
+          for symbol in x264_encoder_open x265_encoder_open xvid_encore; do
+            hits=$(grep -a -il -- "$symbol" $(find prebuilt -name "*.so") 2>/dev/null || true)
+            if [[ -n "$hits" ]]; then
+              echo "::error::found GPL encoder symbol '$symbol' in: $hits (must not be in https)"
+              fail=1
+            else
+              echo "OK: '$symbol' absent"
+            fi
+          done
           echo "=== Positive: gnutls + mediacodec must be PRESENT ==="
           for term in gnutls mediacodec; do
             hits=$(grep -a -il -- "$term" $(find prebuilt -name "*.so") 2>/dev/null || true)
