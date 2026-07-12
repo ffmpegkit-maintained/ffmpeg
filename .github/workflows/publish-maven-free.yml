@@ -14,6 +14,10 @@ on:
         description: 'Publish ONLY ffmpeg-kit-https + ffmpeg-kit-https-gpl (real distinct AARs, downloaded from the same release_tag) -- skips the primary artifact and the redirects'
         required: false
         default: 'false'
+      min_audio_video_aliases_only:
+        description: 'Publish ONLY ffmpeg-kit-min + ffmpeg-kit-audio + ffmpeg-kit-video (real distinct AARs, downloaded from the same release_tag) -- skips the primary artifact and the redirects'
+        required: false
+        default: 'false'
 
 jobs:
   publish:
@@ -88,6 +92,23 @@ jobs:
             --output "${DEST_DIR}/ffmpeg-kit-https-gpl.aar"
           ls -la "$DEST_DIR"
 
+      - name: Download min/audio/video AARs from GitHub Release (min_audio_video_aliases_only mode)
+        if: github.event.inputs.min_audio_video_aliases_only == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LTS="${{ steps.meta.outputs.lts }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DEST_DIR="${LTS}/android/ffmpeg-kit-android-lib/prebuilt-aars"
+          mkdir -p "$DEST_DIR"
+          for name in min audio video; do
+            gh release download "${{ github.event.inputs.release_tag }}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "ffmpeg-kit-${name}-${VERSION}-arm64-v8a-x86_64.aar" \
+              --output "${DEST_DIR}/ffmpeg-kit-${name}.aar"
+          done
+          ls -la "$DEST_DIR"
+
       - name: Publish to Maven Central (primary + redirects)
         working-directory: ${{ steps.meta.outputs.lts }}/android
         env:
@@ -106,6 +127,14 @@ jobs:
             echo "Https-aliases-only mode: publishing ffmpeg-kit-https + ffmpeg-kit-https-gpl (real AARs), skipping primary/redirects."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenHttpsPublicationToMavenCentralRepository \
               :ffmpeg-kit-android-lib:publishMavenHttpsGplPublicationToMavenCentralRepository \
+              --no-configuration-cache --no-daemon \
+              -x :ffmpeg-kit-android-lib:bundleReleaseAar \
+              -Ppublish.version="${VERSION}"
+          elif [ "${{ github.event.inputs.min_audio_video_aliases_only }}" = "true" ]; then
+            echo "Min/audio/video-aliases-only mode: publishing ffmpeg-kit-min + ffmpeg-kit-audio + ffmpeg-kit-video (real AARs), skipping primary/redirects."
+            ./gradlew :ffmpeg-kit-android-lib:publishMavenMinPublicationToMavenCentralRepository \
+              :ffmpeg-kit-android-lib:publishMavenAudioPublicationToMavenCentralRepository \
+              :ffmpeg-kit-android-lib:publishMavenVideoPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
               -Ppublish.version="${VERSION}"
