@@ -168,6 +168,20 @@ for disabled_library in ${disabled_libraries[@]}; do
   set_library "${disabled_library}" 0
 done
 
+# SAFETY NET: some set_library() disable cascades share a low-level dependency
+# between unrelated features -- e.g. disabling tesseract (an OCR feature we
+# strip from the Free tier) also disables libpng, because tesseract's own
+# case in set_library() unconditionally calls `set_library "libpng" 0`. If
+# fontconfig/harfbuzz/libass (font rendering, wanted in the "full"/"full-gpl"
+# tiers) are still enabled, they transitively need freetype -> libpng, and
+# losing libpng here means freetype can never satisfy its dependency check in
+# main-android.sh, silently deadlocking the build's outer while loop forever
+# (no error, no timeout -- just infinite silence). Re-assert libpng whenever
+# freetype is still wanted after the disable pass.
+if [[ ${ENABLED_LIBRARIES[$LIBRARY_FREETYPE]} -eq 1 ]] && [[ ${ENABLED_LIBRARIES[$LIBRARY_LIBPNG]} -ne 1 ]]; then
+  set_library "libpng" 1
+fi
+
 # IF HELP DISPLAYED EXIT
 if [[ -n ${DISPLAY_HELP} ]]; then
   display_help
