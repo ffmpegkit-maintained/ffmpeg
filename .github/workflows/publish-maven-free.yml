@@ -10,6 +10,10 @@ on:
         description: 'Publish ONLY the ffmpegkit/ffmpeg-kit search-alias redirects (skip the primary artifact -- use when the primary is already live and only the new alias publications need to go out)'
         required: false
         default: 'false'
+      https_aliases_only:
+        description: 'Publish ONLY ffmpeg-kit-https + ffmpeg-kit-https-gpl (real distinct AARs, downloaded from the same release_tag) -- skips the primary artifact and the redirects'
+        required: false
+        default: 'false'
 
 jobs:
   publish:
@@ -65,6 +69,25 @@ jobs:
             --output "$DEST"
           echo "Downloaded: $(du -sh "$DEST")"
 
+      - name: Download https/https-gpl AARs from GitHub Release (https_aliases_only mode)
+        if: github.event.inputs.https_aliases_only == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LTS="${{ steps.meta.outputs.lts }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DEST_DIR="${LTS}/android/ffmpeg-kit-android-lib/prebuilt-aars"
+          mkdir -p "$DEST_DIR"
+          gh release download "${{ github.event.inputs.release_tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "ffmpeg-kit-https-${VERSION}-arm64-v8a-x86_64.aar" \
+            --output "${DEST_DIR}/ffmpeg-kit-https.aar"
+          gh release download "${{ github.event.inputs.release_tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "ffmpeg-kit-https-gpl-${VERSION}-arm64-v8a-x86_64.aar" \
+            --output "${DEST_DIR}/ffmpeg-kit-https-gpl.aar"
+          ls -la "$DEST_DIR"
+
       - name: Publish to Maven Central (primary + redirects)
         working-directory: ${{ steps.meta.outputs.lts }}/android
         env:
@@ -79,7 +102,14 @@ jobs:
           GROUP="dev.ffmpegkit-maintained"
           chmod +x gradlew
 
-          if [ "${{ github.event.inputs.redirects_only }}" = "true" ]; then
+          if [ "${{ github.event.inputs.https_aliases_only }}" = "true" ]; then
+            echo "Https-aliases-only mode: publishing ffmpeg-kit-https + ffmpeg-kit-https-gpl (real AARs), skipping primary/redirects."
+            ./gradlew :ffmpeg-kit-android-lib:publishMavenHttpsPublicationToMavenCentralRepository \
+              :ffmpeg-kit-android-lib:publishMavenHttpsGplPublicationToMavenCentralRepository \
+              --no-configuration-cache --no-daemon \
+              -x :ffmpeg-kit-android-lib:bundleReleaseAar \
+              -Ppublish.version="${VERSION}"
+          elif [ "${{ github.event.inputs.redirects_only }}" = "true" ]; then
             echo "Redirects-only mode: publishing search-alias publications, skipping the primary artifact."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenRedirectKitPublicationToMavenCentralRepository \
               :ffmpeg-kit-android-lib:publishMavenRedirectDashPublicationToMavenCentralRepository \
