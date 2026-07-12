@@ -59,7 +59,7 @@ x86)
   ASM_OPTIONS=" --disable-neon --disable-asm --disable-inline-asm"
   ;;
 x86-64)
-  TARGET_CPU="x86_64"
+  TARGET_CPU="x86-64"
   TARGET_ARCH="x86_64"
   ASM_OPTIONS=" --disable-neon --enable-asm --enable-inline-asm"
   ;;
