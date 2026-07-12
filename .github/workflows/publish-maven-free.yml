@@ -6,6 +6,10 @@ on:
       release_tag:
         description: 'Tag LTS Android (ex: v8.1.7-lts-android)'
         required: true
+      redirects_only:
+        description: 'Publish ONLY the ffmpegkit/ffmpeg-kit search-alias redirects (skip the primary artifact -- use when the primary is already live and only the new alias publications need to go out)'
+        required: false
+        default: 'false'
 
 jobs:
   publish:
@@ -73,13 +77,23 @@ jobs:
           VERSION="${{ steps.meta.outputs.version }}"
           ARTIFACT="${{ steps.meta.outputs.artifact }}"
           GROUP="dev.ffmpegkit-maintained"
-          POM_URL="https://repo1.maven.org/maven2/${GROUP//.//}/${ARTIFACT}/${VERSION}/${ARTIFACT}-${VERSION}.pom"
-          if curl -sf "$POM_URL" > /dev/null 2>&1; then
-            echo "Version ${VERSION} of ${ARTIFACT} already on Maven Central — skipping."
-          else
-            chmod +x gradlew
-            ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral \
+          chmod +x gradlew
+
+          if [ "${{ github.event.inputs.redirects_only }}" = "true" ]; then
+            echo "Redirects-only mode: publishing search-alias publications, skipping the primary artifact."
+            ./gradlew :ffmpeg-kit-android-lib:publishMavenRedirectKitPublicationToMavenCentralRepository \
+              :ffmpeg-kit-android-lib:publishMavenRedirectDashPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
               -Ppublish.version="${VERSION}"
+          else
+            POM_URL="https://repo1.maven.org/maven2/${GROUP//.//}/${ARTIFACT}/${VERSION}/${ARTIFACT}-${VERSION}.pom"
+            if curl -sf "$POM_URL" > /dev/null 2>&1; then
+              echo "Version ${VERSION} of ${ARTIFACT} already on Maven Central — skipping."
+            else
+              ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral \
+                --no-configuration-cache --no-daemon \
+                -x :ffmpeg-kit-android-lib:bundleReleaseAar \
+                -Ppublish.version="${VERSION}"
+            fi
           fi
