@@ -204,6 +204,153 @@ signing {
     sign(publishing.publications.mavenRedirectDash)
 }
 
+// ── Arthenica-name alias publications: REAL distinct binaries, not redirects ──
+// Unlike mavenRedirectKit/mavenRedirectDash above (empty POM pointing at the
+// "ffmpeg" artifact), these publish the actual .aar built and binary-verified
+// by build-free-https.yml / build-free-https-gpl.yml (CI downloads the AAR,
+// places it at prebuilt-aars/, this Gradle config publishes it as-is). See
+// project-ffmpeg-free-tier-expansion-plan memory for the "un nom = son vrai
+// contenu" principle this exists to satisfy. Each publication needs its own
+// distinctly-named Jar tasks (archiveBaseName, not just task name) -- sharing
+// one between publications causes an implicit-dependency Gradle failure only
+// caught by a real (non---dry-run) local execution, see
+// feedback-gradle-shared-tasks-multi-publication memory.
+tasks.register('httpsSourcesJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-https'
+    archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+tasks.register('httpsJavadocJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-https'
+    archiveClassifier = 'javadoc'
+}
+tasks.register('httpsGplSourcesJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-https-gpl'
+    archiveClassifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+tasks.register('httpsGplJavadocJar', Jar) {
+    archiveBaseName = 'ffmpeg-kit-https-gpl'
+    archiveClassifier = 'javadoc'
+}
+
+publishing {
+    publications {
+        mavenHttps(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-https'
+            version    = publishVersion
+            artifact("${projectDir}/prebuilt-aars/ffmpeg-kit-https.aar") {
+                extension = 'aar'
+            }
+            artifact(tasks.named('httpsSourcesJar'))
+            artifact(tasks.named('httpsJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Https'
+                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls), Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+            }
+        }
+        mavenHttpsGpl(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-https-gpl'
+            version    = publishVersion
+            artifact("${projectDir}/prebuilt-aars/ffmpeg-kit-https-gpl.aar") {
+                extension = 'aar'
+            }
+            artifact(tasks.named('httpsGplSourcesJar'))
+            artifact(tasks.named('httpsGplJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Https GPL'
+                description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https-gpl (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls) plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE.GPLv3'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications.mavenHttps)
+    sign(publishing.publications.mavenHttpsGpl)
+}
+
+// vanniktech's mavenPublishing{} pom{} block (top of this file) applies to
+// EVERY MavenPublication in the project via its own afterEvaluate, not just
+// the primary one it auto-generates -- it runs AFTER this file is parsed,
+// so it silently overwrote the name/description set inside mavenHttps/
+// mavenHttpsGpl's own pom{} blocks above (confirmed: the live-published
+// ffmpegkit/ffmpeg-kit redirect aliases have this exact bug too -- their
+// real name/description on Maven Central is the primary "ffmpeg" artifact's,
+// not the custom text written for them; already published, can't be fixed
+// retroactively, only in future versions). Fix: register our own
+// afterEvaluate AFTER vanniktech's mavenPublishing{} block has already run
+// (Gradle runs afterEvaluate callbacks in registration order), so ours
+// executes last and wins the final overwrite.
+afterEvaluate {
+    publishing.publications.mavenHttps.pom {
+        name = 'FFmpegKit Https'
+        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls), Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+    }
+    publishing.publications.mavenHttpsGpl.pom {
+        name = 'FFmpegKit Https GPL'
+        description = 'Actively maintained continuation of com.arthenica:ffmpeg-kit-https-gpl (retired, archived April 2025). Same com.arthenica.ffmpegkit API, drop-in replacement -- just change the groupId. TLS/https:// URL support (gmp+gnutls) plus GPL encoders (x264/x265/xvidcore/vid.stab). GPL-3.0 -- copyleft applies to your app. Android SDK 35, 16 KB page size, security-tracked. By Jokobee -- jokobee.com'
+    }
+    // Same fix applied retroactively to the redirect aliases (already live on
+    // Maven Central as of 6.0.3 with the WRONG name/description -- that
+    // published version can't be corrected, Maven Central is immutable, but
+    // every version from here on gets the right text).
+    publishing.publications.mavenRedirectKit.pom {
+        name = 'FFmpegKit Android (alias: ffmpegkit -> ffmpeg)'
+        description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project -- same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
+    }
+    publishing.publications.mavenRedirectDash.pom {
+        name = 'FFmpegKit Android (alias: ffmpeg-kit -> ffmpeg)'
+        description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project -- same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
+    }
+}
+
 task javadoc(type: Javadoc) {
     title = 'FFmpegKit'
     destinationDir = file("${projectDir}/../../docs/android/javadoc")
