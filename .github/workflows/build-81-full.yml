@@ -70,7 +70,7 @@ jobs:
       - name: Export ANDROID_NDK_ROOT
         run: echo "ANDROID_NDK_ROOT=${HOME}/.ndk/$(ls "${HOME}/.ndk")" >> "$GITHUB_ENV"
 
-      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
+      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ffmpeg-cache-Private),
       # not a branch on this repo - same rationale as the 6.0-lts paid
       # tiers. Distinct branch name (81-full) from the production 6.0
       # "full" branch and from the diagnostic "port81-full" branch used
@@ -79,15 +79,15 @@ jobs:
         env:
           CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
-          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git"
+          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git"
           if git ls-remote --exit-code --heads "$REMOTE" 81-full >/dev/null 2>&1; then
-            echo "Found 81-full branch in ci-cache-private, restoring prebuilt/ and src/ from it"
+            echo "Found 81-full branch in ffmpeg-cache-Private, restoring prebuilt/ and src/ from it"
             git fetch --depth=1 "$REMOTE" 81-full
             git archive FETCH_HEAD | tar -x
             echo "Restored:"
             find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort || true
           else
-            echo "No 81-full branch yet in ci-cache-private - starting fresh"
+            echo "No 81-full branch yet in ffmpeg-cache-Private - starting fresh"
           fi
 
       - name: Build full variant (arm64-v8a only)
@@ -103,7 +103,7 @@ jobs:
                 && git init -q -b 81-full \
                 && git add -A \
                 && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git" HEAD:81-full )
+                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git" HEAD:81-full )
               rm -rf "$tmp"
             '
           }
@@ -176,5 +176,5 @@ jobs:
       # No actions/upload-artifact here on purpose - paid Jokobee tier,
       # Actions artifacts on a public repo are downloadable by any signed-in
       # GitHub user for free. The build step above already pushed the
-      # finished .aar to ci-cache-private's "81-full" branch as its final
+      # finished .aar to ffmpeg-cache-Private's "81-full" branch as its final
       # checkpoint - fetch it from there instead.

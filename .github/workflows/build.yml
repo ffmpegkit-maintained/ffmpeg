@@ -88,28 +88,28 @@ jobs:
       # it can overlay anything more recent that a partial/killed run pushed
       # but never got to save through actions/cache's own post-step.
       #
-      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ci-cache-private),
+      # Pushed to a SEPARATE PRIVATE repo (ffmpegkit-maintained/ffmpeg-cache-Private),
       # not a branch on this repo - this repo is public, and a branch here
       # would publicly expose the finished paid-tier .aar with zero
       # authentication needed (any `git clone --branch ci-cache ...` would
       # get it). Learned this the hard way: the original same-repo ci-cache/
       # ci-cache-basic/ci-cache-gpl branches did exactly that and were
       # deleted once found. CI_CACHE_TOKEN is a fine-grained PAT scoped to
-      # just ci-cache-private (Contents: read/write), since GITHUB_TOKEN
+      # just ffmpeg-cache-Private (Contents: read/write), since GITHUB_TOKEN
       # can't reach a different repo.
       - name: Restore latest build checkpoint from private cache repo
         env:
           CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
-          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git"
+          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git"
           if git ls-remote --exit-code --heads "$REMOTE" full >/dev/null 2>&1; then
-            echo "Found full branch in ci-cache-private, restoring prebuilt/ and src/ from it"
+            echo "Found full branch in ffmpeg-cache-Private, restoring prebuilt/ and src/ from it"
             git fetch --depth=1 "$REMOTE" full
             git archive FETCH_HEAD | tar -x
             echo "Restored:"
             find prebuilt src -maxdepth 2 -type d 2>/dev/null | sort || true
           else
-            echo "No full branch yet in ci-cache-private - starting fresh"
+            echo "No full branch yet in ffmpeg-cache-Private - starting fresh"
           fi
 
       # --full enables both gnutls and openssl, which FFmpeg's own configure
@@ -142,7 +142,7 @@ jobs:
                 && git init -q -b full \
                 && git add -A \
                 && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ci-cache-private.git" HEAD:full )
+                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git" HEAD:full )
               rm -rf "$tmp"
             '
           }
@@ -222,4 +222,4 @@ jobs:
       # The build step above already runs `checkpoint` one last time right
       # before it exits (success or fail), which pushes the finished
       # prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar to the
-      # private ci-cache-private repo's "full" branch - fetch it from there.
+      # private ffmpeg-cache-Private repo's "full" branch - fetch it from there.
