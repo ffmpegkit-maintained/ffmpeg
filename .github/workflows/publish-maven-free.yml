@@ -22,6 +22,10 @@ on:
         description: 'Publish ONLY ffmpeg-kit-min-gpl (real distinct AAR, downloaded from the same release_tag) -- skips the primary artifact and the redirects'
         required: false
         default: 'false'
+      full_full_gpl_aliases_only:
+        description: 'Publish ONLY ffmpeg-kit-full + ffmpeg-kit-full-gpl (real distinct AARs, downloaded from the same release_tag) -- skips the primary artifact and the redirects'
+        required: false
+        default: 'false'
 
 jobs:
   publish:
@@ -128,6 +132,25 @@ jobs:
             --output "${DEST_DIR}/ffmpeg-kit-min-gpl.aar"
           ls -la "$DEST_DIR"
 
+      - name: Download full/full-gpl AARs from GitHub Release (full_full_gpl_aliases_only mode)
+        if: github.event.inputs.full_full_gpl_aliases_only == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LTS="${{ steps.meta.outputs.lts }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          DEST_DIR="${LTS}/android/ffmpeg-kit-android-lib/prebuilt-aars"
+          mkdir -p "$DEST_DIR"
+          gh release download "${{ github.event.inputs.release_tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "ffmpeg-kit-full-${VERSION}-arm64-v8a-x86_64.aar" \
+            --output "${DEST_DIR}/ffmpeg-kit-full.aar"
+          gh release download "${{ github.event.inputs.release_tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "ffmpeg-kit-full-gpl-${VERSION}-arm64-v8a-x86_64.aar" \
+            --output "${DEST_DIR}/ffmpeg-kit-full-gpl.aar"
+          ls -la "$DEST_DIR"
+
       - name: Publish to Maven Central (primary + redirects)
         working-directory: ${{ steps.meta.outputs.lts }}/android
         env:
@@ -160,6 +183,13 @@ jobs:
           elif [ "${{ github.event.inputs.min_gpl_alias_only }}" = "true" ]; then
             echo "Min-gpl-alias-only mode: publishing ffmpeg-kit-min-gpl (real AAR), skipping primary/redirects."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenMinGplPublicationToMavenCentralRepository \
+              --no-configuration-cache --no-daemon \
+              -x :ffmpeg-kit-android-lib:bundleReleaseAar \
+              -Ppublish.version="${VERSION}"
+          elif [ "${{ github.event.inputs.full_full_gpl_aliases_only }}" = "true" ]; then
+            echo "Full/full-gpl-aliases-only mode: publishing ffmpeg-kit-full + ffmpeg-kit-full-gpl (real AARs), skipping primary/redirects."
+            ./gradlew :ffmpeg-kit-android-lib:publishMavenFullPublicationToMavenCentralRepository \
+              :ffmpeg-kit-android-lib:publishMavenFullGplPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
               -Ppublish.version="${VERSION}"
