@@ -2,6 +2,56 @@
 
 Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.com/arthenica/ffmpeg-kit), release by release. For native toolchain/build instructions see [BUILD.md](BUILD.md); for moving from the old Maven Central artifacts see [MIGRATION.md](MIGRATION.md).
 
+> Entries below are added **only after a release is confirmed live** on Maven Central (verified
+> by re-downloading the artifact and inspecting it directly) — never as a "planned" placeholder.
+> See [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) for why.
+
+## v7.1.6-lts-android — 2026-07-11
+
+Security + quality release for the Free tier (Basic/Full/Full GPL to follow via Gumroad).
+
+- **Fix: JNI memory leak in `registerNewNativeFFmpegPipe`** — inherited from the original
+  FFmpegKit and never fixed upstream. `GetStringUTFChars` was never paired with
+  `ReleaseStringUTFChars`, leaking one JVM string buffer per FFmpeg pipe created. Fixed in our
+  JNI bridge on 2026-06-24; this is the first 7.1 release to actually ship it — confirmed absent
+  from 7.1.5 by disassembly of the live Maven Central artifact.
+- **Removed: SANM decoder** — CVE-2025-59730/59734 (heap overflow), never backported upstream
+  past FFmpeg 8.0, no realistic Android use case. Disabled via `--disable-decoder=sanm`.
+- MagicYUV (CVE-2026-8461), MPEG-DASH (CVE-2025-59728), EXR (CVE-2025-59733/31/32), and the
+  H.264/HEVC RTP packetizer (CVE-2026-30754) were already fixed in `n7.1.5`'s FFmpeg source —
+  verified by disassembly, no other CVE exposure on this line.
+- Validated: CI build + disassembly (JNI fix, sanm inactive) + real-device runtime test
+  (Pixel 7 Pro) before publishing.
+
+## v6.0.3-lts-android — 2026-07-11
+
+Security release for the Free tier (Basic/Full/Full GPL to follow via Gumroad).
+
+- **Rebased FFmpeg source from `n6.0` to `n6.1.6`** — the last point release upstream actually
+  continues to patch (the strict 6.0.x branch was abandoned after `n6.0.1`). Closes four CVEs,
+  all verified present in `n6.1.6`'s source by direct inspection (not by trusting
+  `ffmpeg.org/security.html`, which lags behind actual branch backports):
+  - **CVE-2026-8461** (CVSS 8.8) — MagicYUV decoder heap out-of-bounds write, publicly
+    discussed PoC. Discovered and reported by Ori Hollander, JFrog Vulnerability Research team.
+  - **CVE-2025-59728** (CVSS 8.7) — MPEG-DASH demuxer out-of-bounds NUL-byte write.
+  - **CVE-2025-59733 / 59732 / 59731** (CVSS 7.1–7.8) — OpenEXR `dwa_uncompress` heap overflow.
+  - **CVE-2026-30754** — H.264/HEVC RTP packetizer bounds issue.
+- **Removed: SANM decoder** — CVE-2025-59730/59734, never backported upstream past FFmpeg 8.0,
+  no realistic Android use case.
+- **Fix: JNI memory leak in `registerNewNativeFFmpegPipe`** — inherited from the original
+  FFmpegKit and never fixed upstream, present in every 6.0.x AAR published to date. Confirmed
+  by disassembly of the live 6.0.1 Maven Central artifact (2-call leaky pattern, no
+  `ReleaseStringUTFChars`) vs. this release (3-call fixed pattern).
+- Two build-porting fixes needed for the `n6.1.6` rebase (both previously solved during the
+  7.1 port): `libavutil/x86/emms.h` moved to `libavutil/emms.h`; missing
+  `#include <string.h>` in `ffmpegkit.c`/`ffprobekit.c` (latent bug masked by FFmpeg 6.0's
+  header layout, exposed by 6.1's refactor).
+- Not applicable: **CVE-2026-30999** — affects the standalone `tools/zmqsend` utility, never
+  compiled as part of ffmpeg-kit.
+- Validated: CI build on both Free and Full (zlib-enabled, to exercise the EXR DWA fix path)
+  tiers + disassembly + real-device runtime test (Pixel 7 Pro) before publishing.
+- `com.arthenica.ffmpegkit` API surface unchanged on both 6.0.3 and 7.1.6 — drop-in upgrade.
+
 ## v8.1.7-lts-android — 2026-06-24
 
 **Critical fix — audio pipeline (all four 8.1 tiers).**
