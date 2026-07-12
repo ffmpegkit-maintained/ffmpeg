@@ -6,6 +6,32 @@ Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.
 > by re-downloading the artifact and inspecting it directly) — never as a "planned" placeholder.
 > See [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) for why.
 
+## Full / Full GPL Maven aliases (6.0.3 / 7.1.6 / 8.1.7) — 2026-07-12
+
+Completes the 8-name Arthenica tier matrix on all three LTS lines: `ffmpeg-kit-full` and
+`ffmpeg-kit-full-gpl` are now live on Maven Central for 6.0, 7.1, and 8.1 (24/24 artifacts —
+`min`, `min-gpl`, `https`, `https-gpl`, `audio`, `video`, `full`, `full-gpl` × 3 lines).
+
+- **Fix: `full`/`full-gpl` builds deadlocked silently forever.** `freetype` (needed by
+  `fontconfig`/`harfbuzz`/`libass`, part of `full`'s `video` scope) depends on `libpng`. Disabling
+  `tesseract` (kept Pro-exclusive on every Free tier) cascades a `set_library "libpng" 0` in
+  `scripts/function.sh`, since tesseract also depends on libpng — silently undoing `--full`'s
+  earlier enable of libpng even though freetype still needed it. `freetype` then permanently
+  failed its dependency check in `main-android.sh`, and the build's own `while` loop spun forever
+  waiting for it — no error, no timeout, just total silence. Fixed in `android.sh` (all 3 lines):
+  libpng is now re-asserted after the disable pass whenever freetype is still enabled.
+- **CI**: all 32 `build-*.yml` workflows had their diagnostic log steps (`build.log`,
+  `config.log`) gated on `if: failure()` only — a cancelled run (exactly what a silent deadlock
+  requires) never triggered them, leaving no trace to debug from. Now also runs on `cancelled()`.
+  Also removed the dead per-build checkpoint push loop (permanently broken since an org-level
+  workflow-permissions lockdown, see below) that was wasting CI time and I/O on every tier.
+- Validated: CI build (all 3 lines, both variants) + real-device instrumented test (Android
+  emulator, Pixel 7 Pro AVD — FFmpeg encode + ffprobe via JNI, no crash) + re-downloaded the live
+  Maven Central artifact and confirmed the `.so` files match, before this entry was written.
+- Note: the org's `default_workflow_permissions` is intentionally locked to read-only, so the
+  per-build checkpoint-resume mechanism used earlier in this project can no longer work — any
+  future build failure requires a full rebuild from scratch, not a resume.
+
 ## v7.1.6-lts-android — 2026-07-11
 
 Security + quality release for the Free tier (Basic/Full/Full GPL to follow via Gumroad).
