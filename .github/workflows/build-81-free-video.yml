@@ -89,11 +89,11 @@ jobs:
           exit "$BUILD_EXIT"
 
       - name: Print build log on failure
-        if: failure()
+        if: failure() || cancelled()
         run: cat build.log || true
 
       - name: Print ffbuild config log on failure
-        if: failure()
+        if: failure() || cancelled()
         run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
 
       - name: Verify 16 KB page size alignment

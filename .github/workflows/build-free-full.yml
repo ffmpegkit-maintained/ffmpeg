@@ -106,15 +106,15 @@ jobs:
           exit "$BUILD_EXIT"
 
       - name: Print build log on failure
-        if: failure()
+        if: failure() || cancelled()
         run: cat build.log || echo "no build.log produced (failed before the build step ran)"
 
       - name: Print ffbuild config log on failure
-        if: failure()
+        if: failure() || cancelled()
         run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
 
       - name: Print toolchain env and per-library config logs on failure
-        if: failure()
+        if: failure() || cancelled()
         run: |
           echo "=== toolchain env ==="
           echo "CC=$CC"
