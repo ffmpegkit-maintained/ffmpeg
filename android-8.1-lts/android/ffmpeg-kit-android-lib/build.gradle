@@ -90,10 +90,10 @@ mavenPublishing {
 // ── Redirect publications (search aliases: ffmpegkit-81, ffmpeg-kit-81) ───
 // See the matching block in android-6.0-lts for the full rationale (prior
 // attempt reverted for missing signatures; fixed here the same way).
-tasks.register('redirectKitSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectDashSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectKitJavadocJar', Jar) { archiveClassifier = 'javadoc' }
-tasks.register('redirectDashJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+tasks.register('redirectKitSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-kit'; archiveClassifier = 'sources' }
+tasks.register('redirectDashSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-dash'; archiveClassifier = 'sources' }
+tasks.register('redirectKitJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-kit'; archiveClassifier = 'javadoc' }
+tasks.register('redirectDashJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-dash'; archiveClassifier = 'javadoc' }
 
 publishing {
     publications {

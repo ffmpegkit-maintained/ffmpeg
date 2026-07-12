@@ -104,10 +104,10 @@ mavenPublishing {
 // PGP key vanniktech's signAllPublications() already configures on the
 // `signing` extension via the ORG_GRADLE_PROJECT_signingInMemoryKey* project
 // properties (see publish-maven-free.yml) -- no separate key setup needed.
-tasks.register('redirectKitSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectDashSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectKitJavadocJar', Jar) { archiveClassifier = 'javadoc' }
-tasks.register('redirectDashJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+tasks.register('redirectKitSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-kit'; archiveClassifier = 'sources' }
+tasks.register('redirectDashSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-dash'; archiveClassifier = 'sources' }
+tasks.register('redirectKitJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-kit'; archiveClassifier = 'javadoc' }
+tasks.register('redirectDashJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-dash'; archiveClassifier = 'javadoc' }
 
 publishing {
     publications {
