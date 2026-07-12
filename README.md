@@ -110,14 +110,7 @@ implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7'
 // or 6.0 LTS         implementation 'dev.ffmpegkit-maintained:ffmpeg-kit-full:6.0.3'
 ```
 
-JitPack (alternative):
-
-```gradle
-// settings.gradle
-dependencyResolutionManagement { repositories { maven { url 'https://jitpack.io' } } }
-// app/build.gradle
-implementation 'com.github.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7'
-```
+JitPack: the historical fallback coordinate `com.github.ffmpegkit-maintained:ffmpeg:<version>` remains available for apps already using it. The named artifacts above (`ffmpeg-kit-full`, `-https`, `-min`, `-audio`, `-video` and their `-gpl` variants) are published to Maven Central and as direct downloads, not JitPack.
 
 Direct download: the prebuilt `.aar` is attached to each GitHub release.
 
