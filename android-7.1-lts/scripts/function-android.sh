@@ -416,11 +416,21 @@ get_common_linked_libraries() {
   case $1 in
   ffmpeg)
 
+    # Always link against libc++_shared: several optional libs that can be
+    # statically linked into ffmpeg (e.g. libilbc, a WebRTC-derived C++/CMake
+    # codec) need C++ runtime symbols (__gxx_personality_v0 etc.) that this
+    # function used to only add for srt/tesseract/x265. Previously this went
+    # unnoticed because the paid Pro tier always also enabled x265, which
+    # coincidentally pulled -lc++_shared in. The free "audio" tier (libilbc,
+    # no x265) exposed it as a genuine dlopen crash -- see
+    # feedback-binary-string-verification-false-positives-style lesson:
+    # CI's static/binary checks don't catch missing dynamic-link deps, only a
+    # real device runtime test does.
     # SUPPORTED ON API LEVEL 24 AND LATER
     if [[ ${API} -ge 24 ]]; then
-      echo "-lc -lm -ldl -llog -landroid -lcamera2ndk -lmediandk ${COMMON_LIBRARY_PATHS}"
+      echo "-lc -lm -ldl -llog -landroid -lcamera2ndk -lmediandk -lc++_shared ${COMMON_LIBRARY_PATHS}"
     else
-      echo "-lc -lm -ldl -llog -landroid ${COMMON_LIBRARY_PATHS}"
+      echo "-lc -lm -ldl -llog -landroid -lc++_shared ${COMMON_LIBRARY_PATHS}"
       echo -e "INFO: Building ffmpeg without native camera API which is not supported on Android API Level ${API}\n" 1>>"${BASEDIR}"/build.log 2>&1
     fi
     ;;
