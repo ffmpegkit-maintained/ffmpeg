@@ -53,7 +53,7 @@ public class SmokeTest {
         // lavfi sine generator avoids needing to ship a binary test asset -
         // aac is FFmpeg's own native encoder (not an external library), so
         // this exercises the same codepath regardless of which tier
-        // (Free/Basic/Full/Full GPL) is under test.
+        // (Free/Pro/Pro GPL) is under test.
         FFmpegSession encodeSession = FFmpegKit.execute(
                 "-y -f lavfi -i sine=frequency=1000:duration=1 -c:a aac " + outputPath);
 

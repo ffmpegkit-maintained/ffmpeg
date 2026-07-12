@@ -1,6 +1,6 @@
 # WhisperKit — On-device speech recognition for FFmpegKit 8.1
 
-**Available in:** FFmpegKit 8.1 LTS — Full tier ($34) and Full GPL tier ($49)
+**Available in:** FFmpegKit 8.1 LTS — Pro tier ($34) and Pro GPL tier ($34)
 **Underlying engine:** [Whisper.cpp v1.7.5](https://github.com/ggml-org/whisper.cpp) (ggml-org)
 
 ---
@@ -25,9 +25,9 @@ Key capabilities:
 
 ## Prerequisites
 
-### 1. Use the Full or Full GPL tier
+### 1. Use the Pro or Pro GPL tier
 
-WhisperKit is only included in the **8.1 Full** and **8.1 Full GPL** AARs. The Free and Basic tiers do not include `libwhisperkit.so`. Calling `WhisperKit.createFromFile()` on a Free/Basic AAR will throw a descriptive `IOException` rather than crashing.
+WhisperKit is only included in the **8.1 Pro** and **8.1 Pro GPL** AARs. The Free tier does not include `libwhisperkit.so`. Calling `WhisperKit.createFromFile()` on a Free AAR will throw a descriptive `IOException` rather than crashing.
 
 ### 2. Download a Whisper GGML model
 
@@ -195,7 +195,7 @@ TranslationProvider google = (text, targetLang) -> {
 
 ## Burn subtitles into the video (the complete pipeline)
 
-With FFmpegKit 8.1 Full (or Full GPL), you can run the complete transcription → translation → subtitle-burning pipeline entirely on Android:
+With FFmpegKit 8.1 Pro (or Pro GPL), you can run the complete transcription → translation → subtitle-burning pipeline entirely on Android:
 
 ```java
 String videoPath  = "/path/to/video.mp4";
@@ -231,7 +231,7 @@ FFmpegKit.executeAsync(
             java.nio.file.Files.write(java.nio.file.Paths.get(srtPath),
                 srt.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-            // Step 4: burn subtitles into the video (requires Full / Full GPL tier for libass)
+            // Step 4: burn subtitles into the video (requires Pro / Pro GPL tier for libass)
             FFmpegKit.executeAsync(
                 "-i " + videoPath + " -vf subtitles=" + srtPath + " " + outputPath,
                 burnSession -> {
@@ -248,7 +248,7 @@ FFmpegKit.executeAsync(
 );
 ```
 
-> **Subtitle burning requires the Full or Full GPL tier** — the `subtitles` FFmpeg filter uses `libass`, which is only included in those two tiers. The `translate` step (Whisper built-in or TranslationProvider) is independent of this.
+> **Subtitle burning requires the Pro or Pro GPL tier** — the `subtitles` FFmpeg filter uses `libass`, which is only included in those two tiers. The `translate` step (Whisper built-in or TranslationProvider) is independent of this.
 
 ---
 
@@ -315,7 +315,7 @@ wk.close();
 ## Checking availability at runtime
 
 ```java
-// getSystemInfo() returns null on Free/Basic tiers (libwhisperkit.so absent)
+// getSystemInfo() returns null on the Free tier (libwhisperkit.so absent)
 String info = WhisperKit.getSystemInfo();
 if (info != null) {
     Log.i("WhisperKit", info); // prints CPU capabilities and build flags
@@ -330,8 +330,8 @@ try {
     // WhisperKit is available
     wk.close();
 } catch (IOException e) {
-    if (e.getMessage() != null && e.getMessage().contains("requires the Full")) {
-        // Running on Free or Basic tier — WhisperKit not included
+    if (e.getMessage() != null && e.getMessage().contains("requires the Pro")) {
+        // Running on the Free tier — WhisperKit not included
     } else {
         // Model file not found or failed to initialize
     }

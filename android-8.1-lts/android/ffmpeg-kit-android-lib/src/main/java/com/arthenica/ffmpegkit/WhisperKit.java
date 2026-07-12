@@ -1,7 +1,7 @@
 /*
  * WhisperKit — on-device speech recognition for FFmpegKit 8.1 LTS.
  *
- * Available only in the Full and Full GPL tiers.  Wraps Whisper.cpp v1.7.5
+ * Available only in the Pro and Pro GPL tiers.  Wraps Whisper.cpp v1.7.5
  * via a JNI bridge (whisperkitjni.c / libwhisperkit.so).
  *
  * Usage:
@@ -66,8 +66,8 @@ public class WhisperKit implements Closeable {
     public static WhisperKit createFromFile(String modelPath) throws IOException {
         if (!AVAILABLE) {
             throw new IOException(
-                    "WhisperKit requires the Full or Full GPL tier of FFmpegKit 8.1 LTS. " +
-                    "The Free and Basic tiers do not include the Whisper native library.");
+                    "WhisperKit requires the Pro or Pro GPL tier of FFmpegKit 8.1 LTS. " +
+                    "The Free tier does not include the Whisper native library.");
         }
         long handle = nativeInitContext(modelPath);
         if (handle == 0) {
@@ -302,7 +302,7 @@ public class WhisperKit implements Closeable {
         return nativeGetSegmentT1(contextHandle, index);
     }
 
-    /** Whisper system information string (CPU capabilities, build flags). Null on Free/Basic tiers. */
+    /** Whisper system information string (CPU capabilities, build flags). Null on the Free tier. */
     public static String getSystemInfo() {
         return AVAILABLE ? nativeGetSystemInfo() : null;
     }
