@@ -90,8 +90,10 @@ mavenPublishing {
 // ── Redirect publications (search aliases: ffmpegkit-81, ffmpeg-kit-81) ───
 // See the matching block in android-6.0-lts for the full rationale (prior
 // attempt reverted for missing signatures; fixed here the same way).
-tasks.register('redirectSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+tasks.register('redirectKitSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectDashSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectKitJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+tasks.register('redirectDashJavadocJar', Jar) { archiveClassifier = 'javadoc' }
 
 publishing {
     publications {
@@ -99,8 +101,8 @@ publishing {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpegkit-81'
             version    = publishVersion
-            artifact(tasks.named('redirectSourcesJar'))
-            artifact(tasks.named('redirectJavadocJar'))
+            artifact(tasks.named('redirectKitSourcesJar'))
+            artifact(tasks.named('redirectKitJavadocJar'))
             pom {
                 name        = 'FFmpegKit Android 8.1 (alias: ffmpegkit-81 → ffmpeg)'
                 description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork), 8.1 LTS line.'
@@ -140,8 +142,8 @@ publishing {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpeg-kit-81'
             version    = publishVersion
-            artifact(tasks.named('redirectSourcesJar'))
-            artifact(tasks.named('redirectJavadocJar'))
+            artifact(tasks.named('redirectDashSourcesJar'))
+            artifact(tasks.named('redirectDashJavadocJar'))
             pom {
                 name        = 'FFmpegKit Android 8.1 (alias: ffmpeg-kit-81 → ffmpeg)'
                 description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork), 8.1 LTS line.'

@@ -104,8 +104,10 @@ mavenPublishing {
 // PGP key vanniktech's signAllPublications() already configures on the
 // `signing` extension via the ORG_GRADLE_PROJECT_signingInMemoryKey* project
 // properties (see publish-maven-free.yml) -- no separate key setup needed.
-tasks.register('redirectSourcesJar', Jar) { archiveClassifier = 'sources' }
-tasks.register('redirectJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+tasks.register('redirectKitSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectDashSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectKitJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+tasks.register('redirectDashJavadocJar', Jar) { archiveClassifier = 'javadoc' }
 
 publishing {
     publications {
@@ -113,8 +115,8 @@ publishing {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpegkit'
             version    = publishVersion
-            artifact(tasks.named('redirectSourcesJar'))
-            artifact(tasks.named('redirectJavadocJar'))
+            artifact(tasks.named('redirectKitSourcesJar'))
+            artifact(tasks.named('redirectKitJavadocJar'))
             pom {
                 name        = 'FFmpegKit Android (alias: ffmpegkit → ffmpeg)'
                 description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
@@ -154,8 +156,8 @@ publishing {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpeg-kit'
             version    = publishVersion
-            artifact(tasks.named('redirectSourcesJar'))
-            artifact(tasks.named('redirectJavadocJar'))
+            artifact(tasks.named('redirectDashSourcesJar'))
+            artifact(tasks.named('redirectDashJavadocJar'))
             pom {
                 name        = 'FFmpegKit Android (alias: ffmpeg-kit → ffmpeg)'
                 description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
