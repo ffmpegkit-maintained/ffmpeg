@@ -87,6 +87,104 @@ mavenPublishing {
     }
 }
 
+// ── Redirect publications (search aliases: ffmpegkit-81, ffmpeg-kit-81) ───
+// See the matching block in android-6.0-lts for the full rationale (prior
+// attempt reverted for missing signatures; fixed here the same way).
+tasks.register('redirectSourcesJar', Jar) { archiveClassifier = 'sources' }
+tasks.register('redirectJavadocJar', Jar) { archiveClassifier = 'javadoc' }
+
+publishing {
+    publications {
+        mavenRedirectKit(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpegkit-81'
+            version    = publishVersion
+            artifact(tasks.named('redirectSourcesJar'))
+            artifact(tasks.named('redirectJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 8.1 (alias: ffmpegkit-81 → ffmpeg)'
+                description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork), 8.1 LTS line.'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
+        }
+        mavenRedirectDash(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-81'
+            version    = publishVersion
+            artifact(tasks.named('redirectSourcesJar'))
+            artifact(tasks.named('redirectJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 8.1 (alias: ffmpeg-kit-81 → ffmpeg)'
+                description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project — same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork), 8.1 LTS line.'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications.mavenRedirectKit)
+    sign(publishing.publications.mavenRedirectDash)
+}
+
 task javadoc(type: Javadoc) {
     title = 'FFmpegKit'
     destinationDir = file("${projectDir}/../../docs/android/javadoc")
