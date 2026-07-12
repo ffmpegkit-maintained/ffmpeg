@@ -94,34 +94,11 @@ jobs:
         env:
           CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
-          checkpoint() {
-            flock /tmp/checkpoint.lock -c '
-              tmp=$(mktemp -d)
-              cp -r prebuilt "$tmp/" 2>/dev/null
-              cp -r src "$tmp/" 2>/dev/null
-              ( cd "$tmp" \
-                && git init -q -b 81-full \
-                && git add -A \
-                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git" HEAD:81-full )
-              rm -rf "$tmp"
-            '
-          }
-          (
-            while true; do
-              sleep 120
-              checkpoint || true
-            done
-          ) &
-          CHECKPOINT_PID=$!
 
           touch build.log
           set +e
           ./android.sh --full --enable-whisper --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
           BUILD_EXIT=$?
-          kill "$CHECKPOINT_PID" 2>/dev/null || true
-          wait "$CHECKPOINT_PID" 2>/dev/null || true
-          checkpoint || true
           exit "$BUILD_EXIT"
 
       - name: Print build log on failure

@@ -79,26 +79,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          checkpoint() {
-            flock /tmp/checkpoint.lock -c '
-              tmp=$(mktemp -d)
-              cp -r prebuilt "$tmp/" 2>/dev/null
-              cp -r src "$tmp/" 2>/dev/null
-              ( cd "$tmp" \
-                && git init -q -b ci-cache-free-https \
-                && git add -A \
-                && git -c user.email="ci-checkpoint@ffmpegkit-maintained" -c user.name="ci-checkpoint" commit -q -m "checkpoint $(date -u +%FT%TZ)" \
-                && git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:ci-cache-free-https )
-              rm -rf "$tmp"
-            '
-          }
-          (
-            while true; do
-              sleep 120
-              checkpoint || true
-            done
-          ) &
-          CHECKPOINT_PID=$!
 
           touch build.log
           set +e
@@ -106,9 +86,6 @@ jobs:
             --enable-android-media-codec --enable-android-zlib \
             --disable-arm-v7a --disable-arm-v7a-neon --disable-x86
           BUILD_EXIT=$?
-          kill "$CHECKPOINT_PID" 2>/dev/null || true
-          wait "$CHECKPOINT_PID" 2>/dev/null || true
-          checkpoint || true
           exit "$BUILD_EXIT"
 
       - name: Print build log on failure
@@ -209,3 +186,4 @@ jobs:
         with:
           name: ffmpeg-kit-free-https-arm64-v8a-x86_64
           path: android-6.0-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
+          retention-days: 3
