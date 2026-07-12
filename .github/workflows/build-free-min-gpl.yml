@@ -112,6 +112,12 @@ jobs:
         if: failure()
         run: '[[ -f ./src/ffmpeg/ffbuild/config.log ]] && tail -100 ./src/ffmpeg/ffbuild/config.log || true'
 
+      - name: Diagnostic - print ffmpeg configure summary (temporary, always runs)
+        run: |
+          grep -iE "libx264|libx265|libxvid|libvidstab|External libraries|configuration:" build.log || echo "no matches in build.log"
+          echo "---"
+          [[ -f ./src/ffmpeg/ffbuild/config.log ]] && grep -B2 -A2 -iE "libx264|libx265|libxvid|libvidstab" ./src/ffmpeg/ffbuild/config.log | head -100 || echo "no config.log"
+
       - name: Verify 16 KB page size alignment
         run: |
           set -e
