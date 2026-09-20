@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Tag LTS Android (ex: v8.1.7-lts-android)'
+        description: 'Tag LTS Android (ex: v8.1.7-lts-android) -- where the AARs are downloaded from'
         required: true
+      publish_version:
+        description: 'Maven version to publish, when it differs from the tag (ex: 8.1.8 for a metadata-only fix reusing v8.1.7-lts-android binaries). Leave empty to use the tag version.'
+        required: false
+        default: ''
       redirects_only:
         description: 'Publish ONLY the ffmpegkit/ffmpeg-kit search-alias redirects (skip the primary artifact -- use when the primary is already live and only the new alias publications need to go out)'
         required: false
@@ -62,10 +66,19 @@ jobs:
             ARTIFACT="ffmpeg"
             AAR_NAME="ffmpeg-kit-free-${NUM}-arm64-v8a.aar"
           fi
-          echo "lts=$LTS"           >> $GITHUB_OUTPUT
-          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
-          echo "aar_name=$AAR_NAME" >> $GITHUB_OUTPUT
-          echo "version=$NUM"       >> $GITHUB_OUTPUT
+          # Two distinct versions, and conflating them is the trap this input exists
+          # to avoid. `version` names the AAR files inside the GitHub Release and must
+          # follow the tag. `publish_version` is the Maven coordinate and may run ahead
+          # of it -- a POM-only correction republishes identical binaries under a new
+          # version, because Maven Central is immutable and the old one cannot be fixed.
+          PUBLISH="${{ github.event.inputs.publish_version }}"
+          [ -z "$PUBLISH" ] && PUBLISH="$NUM"
+          echo "lts=$LTS"                   >> $GITHUB_OUTPUT
+          echo "artifact=$ARTIFACT"         >> $GITHUB_OUTPUT
+          echo "aar_name=$AAR_NAME"         >> $GITHUB_OUTPUT
+          echo "version=$NUM"               >> $GITHUB_OUTPUT
+          echo "publish_version=$PUBLISH"   >> $GITHUB_OUTPUT
+          echo "Assets from tag: $NUM | published to Maven Central as: $PUBLISH"
 
       - name: Download AAR from GitHub Release
         env:
@@ -161,6 +174,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
+          PUBLISH_VERSION="${{ steps.meta.outputs.publish_version }}"
           ARTIFACT="${{ steps.meta.outputs.artifact }}"
           GROUP="dev.ffmpegkit-maintained"
           chmod +x gradlew
@@ -171,7 +185,7 @@ jobs:
               :ffmpeg-kit-android-lib:publishMavenHttpsGplPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
-              -Ppublish.version="${VERSION}"
+              -Ppublish.version="${PUBLISH_VERSION}"
           elif [ "${{ github.event.inputs.min_audio_video_aliases_only }}" = "true" ]; then
             echo "Min/audio/video-aliases-only mode: publishing ffmpeg-kit-min + ffmpeg-kit-audio + ffmpeg-kit-video (real AARs), skipping primary/redirects."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenMinPublicationToMavenCentralRepository \
@@ -179,27 +193,27 @@ jobs:
               :ffmpeg-kit-android-lib:publishMavenVideoPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
-              -Ppublish.version="${VERSION}"
+              -Ppublish.version="${PUBLISH_VERSION}"
           elif [ "${{ github.event.inputs.min_gpl_alias_only }}" = "true" ]; then
             echo "Min-gpl-alias-only mode: publishing ffmpeg-kit-min-gpl (real AAR), skipping primary/redirects."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenMinGplPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
-              -Ppublish.version="${VERSION}"
+              -Ppublish.version="${PUBLISH_VERSION}"
           elif [ "${{ github.event.inputs.full_full_gpl_aliases_only }}" = "true" ]; then
             echo "Full/full-gpl-aliases-only mode: publishing ffmpeg-kit-full + ffmpeg-kit-full-gpl (real AARs), skipping primary/redirects."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenFullPublicationToMavenCentralRepository \
               :ffmpeg-kit-android-lib:publishMavenFullGplPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
-              -Ppublish.version="${VERSION}"
+              -Ppublish.version="${PUBLISH_VERSION}"
           elif [ "${{ github.event.inputs.redirects_only }}" = "true" ]; then
             echo "Redirects-only mode: publishing search-alias publications, skipping the primary artifact."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenRedirectKitPublicationToMavenCentralRepository \
               :ffmpeg-kit-android-lib:publishMavenRedirectDashPublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
-              -Ppublish.version="${VERSION}"
+              -Ppublish.version="${PUBLISH_VERSION}"
           else
             POM_URL="https://repo1.maven.org/maven2/${GROUP//.//}/${ARTIFACT}/${VERSION}/${ARTIFACT}-${VERSION}.pom"
             if curl -sf "$POM_URL" > /dev/null 2>&1; then
@@ -208,6 +222,6 @@ jobs:
               ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral \
                 --no-configuration-cache --no-daemon \
                 -x :ffmpeg-kit-android-lib:bundleReleaseAar \
-                -Ppublish.version="${VERSION}"
+                -Ppublish.version="${PUBLISH_VERSION}"
             fi
           fi
