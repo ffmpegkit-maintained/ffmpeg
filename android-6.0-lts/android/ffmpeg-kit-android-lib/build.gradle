@@ -651,6 +651,44 @@ afterEvaluate {
         name = 'FFmpegKit Android (alias: ffmpeg-kit -> ffmpeg)'
         description = 'Search alias on Maven Central. Use dev.ffmpegkit-maintained:ffmpeg in your project -- same Android FFmpeg library (ffmpegkit / ffmpeg-kit maintained fork).'
     }
+
+    // Every publication below ships a PREBUILT .aar via artifact(file), not a Gradle
+    // component, so Gradle has no dependency graph to write and the generated POM came
+    // out with an empty <dependencies>. The library's own build.gradle declares
+    //     api 'com.arthenica:smart-exception-java:0.2.1'
+    // but a file artifact cannot carry that, so it never reached Maven Central.
+    //
+    // The consequence was measured, not theorised: a consumer resolves the AAR, the
+    // project COMPILES, and the very first FFmpegKit call dies with
+    //     NoClassDefFoundError: com/arthenica/smartexception/java/Exceptions
+    // The error does not name FFmpegKit, so the developer looks at their own code first.
+    //
+    // Scope `compile` rather than `runtime` to match the `api` declaration: this is sold
+    // as a drop-in replacement, and a drop-in must not be stricter than what it replaces.
+    //
+    // Not applied to mavenRedirectKit / mavenRedirectDash: those ship no AAR, only the
+    // alias POM that already points at the real artifact.
+    ['mavenHttps', 'mavenHttpsGpl', 'mavenMin', 'mavenAudio',
+     'mavenVideo', 'mavenFull', 'mavenFullGpl', 'mavenMinGpl'].each { pubName ->
+        def pub = publishing.publications.findByName(pubName)
+        if (pub != null) {
+            pub.pom.withXml {
+                def root = asNode()
+                def deps = root.dependencies ? root.dependencies[0]
+                                             : root.appendNode('dependencies')
+                def already = deps.dependency.find {
+                    it.artifactId.text() == 'smart-exception-java'
+                }
+                if (already == null) {
+                    def dep = deps.appendNode('dependency')
+                    dep.appendNode('groupId',    'com.arthenica')
+                    dep.appendNode('artifactId', 'smart-exception-java')
+                    dep.appendNode('version',    '0.2.1')
+                    dep.appendNode('scope',      'compile')
+                }
+            }
+        }
+    }
 }
 
 task javadoc(type: Javadoc) {
