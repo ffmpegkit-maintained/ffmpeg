@@ -490,7 +490,21 @@ fail:
 
 int init_complex_filtergraph(FilterGraph *fg)
 {
-    AVFilterInOut *inputs, *outputs, *cur;
+    /* Initialised, and that is the whole fix for a crash.
+     *
+     * graph_parse() writes to &inputs only on success; on a parse error -- an
+     * unknown filter name, a malformed link label -- it leaves the pointer alone.
+     * The fail: label below then called avfilter_inout_free() on whatever the stack
+     * happened to hold, and the process died with SIGSEGV instead of returning the
+     * error code the caller was waiting for.
+     *
+     * A host app cannot catch that: fftools runs in-process here, so a bad
+     * -filter_complex took the whole application down. Reported as the secondary
+     * observation in issue #1, alongside the missing drawtext filter that is how
+     * the reporter reached this path -- a filter that is not in the build is,
+     * to the parser, an unknown filter name.
+     */
+    AVFilterInOut *inputs = NULL, *outputs = NULL, *cur;
     AVFilterGraph *graph;
     int ret = 0;
 
@@ -1139,7 +1153,7 @@ static int graph_is_meta(AVFilterGraph *graph)
 
 int configure_filtergraph(FilterGraph *fg)
 {
-    AVFilterInOut *inputs, *outputs, *cur;
+    AVFilterInOut *inputs = NULL, *outputs = NULL, *cur;
     int ret, i, simple = filtergraph_is_simple(fg);
     const char *graph_desc = simple ? fg->outputs[0]->ost->avfilter :
                                       fg->graph_desc;

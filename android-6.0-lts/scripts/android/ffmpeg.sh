@@ -119,6 +119,15 @@ for library in {0..61}; do
       LDFLAGS+=" $(pkg-config --libs --static gnutls 2>>"${BASEDIR}"/build.log)"
       CONFIGURE_POSTFIX+=" --enable-gnutls"
       ;;
+    # Since FFmpeg 6.1 the drawtext filter depends on libharfbuzz, and configure
+    # drops the filter silently when the flag is absent. harfbuzz was already being
+    # built -- libass needs it -- so the library sat in the .so while the filter it
+    # enables did not. See issue #1.
+    harfbuzz)
+      CFLAGS+=" $(pkg-config --cflags harfbuzz 2>>"${BASEDIR}"/build.log)"
+      LDFLAGS+=" $(pkg-config --libs --static harfbuzz 2>>"${BASEDIR}"/build.log)"
+      CONFIGURE_POSTFIX+=" --enable-libharfbuzz"
+      ;;
     kvazaar)
       CFLAGS+=" $(pkg-config --cflags kvazaar 2>>"${BASEDIR}"/build.log)"
       LDFLAGS+=" $(pkg-config --libs --static kvazaar 2>>"${BASEDIR}"/build.log)"

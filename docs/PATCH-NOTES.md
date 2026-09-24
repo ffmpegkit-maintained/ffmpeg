@@ -6,6 +6,43 @@ Changes in this fork relative to upstream [arthenica/ffmpeg-kit](https://github.
 > by re-downloading the artifact and inspecting it directly) — never as a "planned" placeholder.
 > See [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) for why.
 
+## ⚠️ Known issue: `drawtext` missing from every published build (all lines)
+
+Not a release entry — a correction to what this document promised. Tracked as [issue #1](https://github.com/ffmpegkit-maintained/ffmpeg/issues/1).
+
+`drawtext` is **absent from every AAR this fork has published**, on all three LTS 
+lines and in every tier, not only `basic`. Verified by scanning `libavfilter.so` in 
+the live Maven Central artifacts:
+
+| artifact | FFmpeg actually built | `--enable-libharfbuzz` | `drawtext` |
+|---|---|---|---|
+| `ffmpeg-kit-full-gpl:8.1.8` | n8.1.2 | no | **absent** |
+| `ffmpeg-kit-full-gpl:7.1.6` | n7.1.5 | no | **absent** |
+| `ffmpeg-kit-full-gpl:6.0.3` | n6.1.6 | no | **absent** |
+| `com.arthenica:ffmpeg-kit-full-gpl:6.0-2` | 6.0 | — | present |
+
+**Cause.** Since FFmpeg 6.1, `drawtext` depends on libharfbuzz, and `configure` drops 
+a filter *silently* when its dependency flag is absent. harfbuzz was built and linked 
+all along — libass needs it — but `scripts/*/ffmpeg.sh` had no `harfbuzz)` branch, so 
+`--enable-libharfbuzz` was never passed. The library was in the `.so`; the filter it 
+enables was not.
+
+Note the 6.0 line: it builds **n6.1.6**, not 6.0, which is why it is affected too and 
+why upstream's `6.0-2` — a real 6.0 — still has the filter.
+
+**Fixed in the build scripts** (all three lines, android and apple). The entry 
+recording the released fix will be added here once the artifacts are live and 
+re-verified, per the rule at the top of this file. `tools/check-filters.py` now reads 
+a built AAR and fails when a tier is missing a filter it promises — every check we 
+had looked at the build inputs, and this one looks at what we shipped.
+
+**Also fixed, and more serious:** a filtergraph parse error killed the host process. 
+`init_complex_filtergraph()` left `AVFilterInOut *inputs` uninitialised and freed it 
+on the failure path, so any unknown filter name in `-filter_complex` segfaulted 
+in-process instead of returning an error code. That affects every user of 
+`-filter_complex`, not only `drawtext` users — a missing filter is simply one way to 
+reach it.
+
 ## Full / Full GPL Maven aliases (6.0.3 / 7.1.6 / 8.1.7) — 2026-07-12
 
 Completes the 8-name Arthenica tier matrix on all three LTS lines: `ffmpeg-kit-full` and
@@ -244,7 +281,7 @@ Closes the two "known gaps" from `v6.0.0-lts-android` below. Not yet shipped as 
 - `-Wl,-z,max-page-size=16384` / `-Wl,-z,common-page-size=16384` added to the native linker flags (`scripts/function-android.sh` `get_ldflags()` for the FFmpeg libraries, and a new `android/jni/Application.mk` for `libffmpegkit.so`).
 - Three more build tiers alongside the original `full` build (renamed **Full**, `build.yml`), each its own workflow/cache/`ci-cache-*` branch so none of them ever share a cache namespace or mix artifacts:
   - **Full GPL** (`build-gpl.yml`, $39 on Jokobee): `--full --enable-gpl`, adds `x264`/`x265`/`xvidcore`/`libvidstab`/`rubberband`. Changes the AAR's license to **GPL-3.0** — confirmed via a dedicated CI step that checks the GPLv3 text both at `android/ffmpeg-kit-android-lib/src/main/res/raw/license.txt` and inside the built `.aar`'s `res/raw/license.txt`.
-  - **Basic** (`build-basic.yml`, $19 on Jokobee): `--full` minus `kvazaar` (H.265 encode) and four niche blocks (OCR: `tesseract`+`leptonica`; subtitle/text rendering: `libass`+`harfbuzz`+`freetype`+`fontconfig`+`fribidi`, which also drops FFmpeg's `drawtext` filter; `srt`; `chromaprint`). `openh264` (H.264 encode) is deliberately kept — it's the single most common use case, an earlier draft dropped it too and that made the tier much less useful.
+  - **Basic** (`build-basic.yml`, $19 on Jokobee): `--full` minus `kvazaar` (H.265 encode) and four niche blocks (OCR: `tesseract`+`leptonica`; subtitle/text rendering: `libass`+`harfbuzz`+`freetype`+`fontconfig`+`fribidi`, which also drops FFmpeg's `drawtext` filter — **but see the note below: `drawtext` has in fact been missing from *every* tier, including `full` and `full-gpl`**; `srt`; `chromaprint`). `openh264` (H.264 encode) is deliberately kept — it's the single most common use case, an earlier draft dropped it too and that made the tier much less useful.
   - **Free** (`build-free.yml`, Maven Central, no charge): software-only (no `--enable-android-media-codec`), explicit `--enable-libaom --enable-dav1d --enable-libvpx --enable-opus --enable-libvorbis --enable-speex` instead of `--full`-minus-something, since it's a much smaller set. No H.264/H.265 encode, no TLS, no images beyond what FFmpeg needs internally, no subtitles/OCR/SRT/fingerprinting.
   - See README § Available tiers for the full per-tier feature table shown to customers.
 - Maven Central publishing for the Free tier: `com.vanniktech.maven.publish` (pinned to **0.34.0** — 0.35+ requires AGP 8.13+, all four tiers are pinned to AGP 8.6.0) applied to `ffmpeg-kit-android-lib/build.gradle`, coordinates `dev.ffmpegkit-maintained:ffmpeg-kit-free`, full POM metadata for Central Portal validation. `build-free.yml` gained a `Publish to Maven Central` step gated on `startsWith(github.ref, 'refs/tags/')` (not `workflow_dispatch`) since a Central Portal release can't be un-published. Credentials via `OSSRH_USERNAME`/`OSSRH_PASSWORD` (Sonatype user token) and `GPG_PRIVATE_KEY`/`GPG_PASSPHRASE` (in-memory signing key) repo secrets. Namespace `dev.ffmpegkit-maintained` verified directly on the Central Portal (not the `io.github.<org>` auto-verification path, which only covers personal GitHub usernames, not organizations).
