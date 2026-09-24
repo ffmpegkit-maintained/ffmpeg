@@ -32,8 +32,23 @@ get_library_source() {
     SOURCE_TYPE="TAG"
     ;;
   ffmpeg)
+    # n8.1.2 -> n8.1.3 (2026-09-24). n8.1.2 is vulnerable to four CVSS 8.8 issues
+    # disclosed 2026-07-22, all fixed in n8.1.3 -- verified by commit, not by
+    # release note:
+    #
+    #   CVE-2026-64830  VobSub demuxer, unbounded writes past vobsub->q[]
+    #                   4fe710047d  avformat/vobsub: bound the stream count
+    #   CVE-2026-64835  ADX decoder, channel state desync
+    #                   852b0552f0  avcodec/adx: sync channel state on NEW_EXTRADATA
+    #   CVE-2026-64831  Vulkan HEVC   6b3015cd92 -- NOT reachable here, this build
+    #                   passes no Vulkan flag (checked in the shipped libavutil).
+    #   CVE-2026-64832  NVDEC         9cbcf979a5 -- no NVIDIA decode path on Android.
+    #
+    # The first two ARE reachable: the vobsub demuxer and the adx decoder are both
+    # registered in the published .so, checked by scanning the artifacts rather than
+    # by reading the configure line.
     SOURCE_REPO_URL="https://github.com/arthenica/FFmpeg"
-    SOURCE_ID="n8.1.2"
+    SOURCE_ID="n8.1.3"
     SOURCE_TYPE="TAG"
     ;;
   fontconfig)
