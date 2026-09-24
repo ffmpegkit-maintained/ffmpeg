@@ -16,6 +16,19 @@ The mechanism was specific -- since FFmpeg 6.1 `drawtext` depends on libharfbuzz
 shape is general: anything can fall out of a build without a line in the log. So this
 checks the artifact, not the recipe, and would have caught it whatever the cause.
 
+What this tool can and cannot say
+---------------------------------
+It counts byte strings in `libavfilter.so`. A filter's name string is there when the
+filter is compiled in and gone when it is not, so the signal is real -- but it is one
+string, and the `ff_vf_*` symbols it would rather read are stripped from a release
+`.so`. Measured 2026-09-24: `drawtext` occurs 0 times in an 8.1 build without it and
+exactly 1 time in a 6.0 build with it.
+
+The authority is ffmpeg's own registration table, which only a running build can show:
+`-filters`. The device harness in test-app/ asks it, and that is what a release should
+be gated on. This tool is the CI-side approximation -- cheap, no device, and good enough
+to stop a build that lost a filter.
+
 Usage:
     python3 tools/check-filters.py <aar> [--tier full|full-gpl|basic|free]
     python3 tools/check-filters.py <aar> --list

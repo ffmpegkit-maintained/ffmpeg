@@ -43,6 +43,28 @@ in-process instead of returning an error code. That affects every user of
 `-filter_complex`, not only `drawtext` users — a missing filter is simply one way to 
 reach it.
 
+**The 6.0 line is two different builds, and only one of them is affected.**
+Measured 2026-09-24, on the device, by asking ffmpeg's own filter table (`-filters`)
+rather than scanning strings:
+
+| artifact | FFmpeg it reports | `drawtext` in the filter table |
+|---|---|---|
+| Maven Central `ffmpeg-kit-full-gpl:6.0.3` | n6.1.6 | **no** (482 filters listed) |
+| the Gumroad `full-gpl` 6.0 package on file | n6.0 | **yes**, and it renders |
+
+So the 6.0 *Maven* artifacts carry n6.1.6, where `drawtext` needs harfbuzz and was
+dropped; the Gumroad 6.0 package on file is a real 6.0, from before that switch, where
+`drawtext` has no such dependency and works. ⚠️ The Gumroad zip currently on sale has
+not been checked against this -- worth confirming it is the same build before assuming
+6.0 buyers are unaffected.
+
+`-filters` is the authority here, not `tools/check-filters.py`. That tool counts byte
+strings in `libavfilter.so`, and for 6.0 its "present" verdict rested on a **single**
+occurrence of the word. It happened to be right -- the name string is there when the
+filter is compiled and gone when it is not -- but one string is a thin thing to publish
+a release on, and the symbol names it would rather read are stripped from a release
+`.so`. The device harness asks the registration table directly.
+
 **Measured on a device, 2026-09-24.** Pixel 7 Pro, Android 16, arm64, running the
 faulty June AAR (`ffmpeg-kit-full-gpl-8.1`, FFmpeg n8.1.2) so the harness could be
 checked against a build known to be broken:
