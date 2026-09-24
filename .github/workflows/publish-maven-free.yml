@@ -53,17 +53,23 @@ jobs:
           TAG="${{ github.event.inputs.release_tag }}"
           NUM=$(echo "$TAG" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
           MAJOR=$(echo "$NUM" | cut -d. -f1)
+          # The three lines all publish the primary under the SAME coordinate:
+          # coordinates("dev.ffmpegkit-maintained", "ffmpeg", publishVersion), in each
+          # line's build.gradle. ARTIFACT is used for one thing only -- asking Maven
+          # Central whether this version is already there -- so it must be that name.
+          #
+          # WARNING: it used to be "ffmpeg-81" and "ffmpeg-71", which do not exist on
+          # Maven Central. The curl always 404'd, so the "already published, skipping"
+          # guard could never fire on the 7.1 and 8.1 lines. It read like a guard.
+          ARTIFACT="ffmpeg"
           if [ "$MAJOR" = "8" ]; then
             LTS="android-8.1-lts"
-            ARTIFACT="ffmpeg-81"
             AAR_NAME="ffmpeg-kit-free81-${NUM}-arm64-v8a.aar"
           elif [ "$MAJOR" = "7" ]; then
             LTS="android-7.1-lts"
-            ARTIFACT="ffmpeg-71"
             AAR_NAME="ffmpeg-kit-free71-${NUM}-arm64-v8a.aar"
           else
             LTS="android-6.0-lts"
-            ARTIFACT="ffmpeg"
             AAR_NAME="ffmpeg-kit-free-${NUM}-arm64-v8a.aar"
           fi
           # Two distinct versions, and conflating them is the trap this input exists
