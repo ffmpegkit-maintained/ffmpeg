@@ -15,7 +15,7 @@ jobs:
   docs-version-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Docs version consistency check
         run: |
@@ -46,7 +46,7 @@ jobs:
   build-scripts-are-runnable:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The 8.1 security build of 2026-09-24 died sourcing function.sh: the scripts had
       # been edited from a Windows checkout with core.autocrlf=true, and the CRLF
