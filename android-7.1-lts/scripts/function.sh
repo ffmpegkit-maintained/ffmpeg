@@ -2052,6 +2052,16 @@ downloaded_library_sources() {
     exit 1
   fi
 
+  # Patches are applied HERE, and not inside download_library_source, because that
+  # function is called in a command substitution: an `exit 1` there would end the
+  # subshell only. Its error text would land in DOWNLOAD_RESULT, and `[[ "text" -ne 0 ]]`
+  # evaluates a non-numeric string as 0 in bash -- so the comparison would be false and
+  # the build would carry on without the security backport it just failed to apply.
+  #
+  # Found by the witness for this mechanism, not by review: a guard that cannot stop
+  # the build is the defect it was written to prevent.
+  apply_library_patches "ffmpeg"
+
   for library in {1..50}; do
     if [[ ${!library} -eq 1 ]]; then
       library_name=$(get_library_name $((library - 1)))
@@ -2063,6 +2073,8 @@ downloaded_library_sources() {
         echo -e "failed\n"
         exit 1
       fi
+
+      apply_library_patches "${library_name}"
     fi
   done
 
@@ -2116,6 +2128,58 @@ download() {
 #
 # 1. library name
 #
+
+#
+# Applies patches/<library>/*.patch to a downloaded source tree.
+#
+# Why this exists: until 2026-09-24 there was no way to carry a single upstream fix.
+# The only tool was the source pin, so closing four CVEs on the 6.0 line in July meant
+# rebasing the whole tree from n6.0 to n6.1.6 -- a large change to fix four small ones.
+# When upstream stops releasing on a branch, as it has on 7.1.x and 6.1.x, even that
+# hammer is gone.
+#
+# Two properties this has to have, and they are the reason it is not three lines:
+#
+#   IDEMPOTENT. CI restores src/ from a cache, so this runs against trees that are
+#   already patched as often as fresh ones. Each patch is reverse-checked first; one
+#   that is already applied is skipped, not applied twice.
+#
+#   LOUD. A security backport that quietly fails to apply is worse than no mechanism
+#   at all: the build stays green and the fix is not in the artifact. A patch that
+#   neither applies nor is already applied stops the build.
+#
+apply_library_patches() {
+  local LIB_NAME="$1"
+  local LIB_LOCAL_PATH="${BASEDIR}/src/${LIB_NAME}"
+  local PATCH_DIR="${BASEDIR}/patches/${LIB_NAME}"
+  local PATCH_FILE=""
+
+  if [ ! -d "${PATCH_DIR}" ]; then
+    return 0
+  fi
+
+  for PATCH_FILE in "${PATCH_DIR}"/*.patch; do
+    [ -e "${PATCH_FILE}" ] || continue
+
+    if (cd "${LIB_LOCAL_PATH}" && git apply --reverse --check "${PATCH_FILE}" 2>/dev/null); then
+      echo -e "INFO: patch $(basename "${PATCH_FILE}") already applied to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
+      continue
+    fi
+
+    if (cd "${LIB_LOCAL_PATH}" && git apply "${PATCH_FILE}" 1>>"${BASEDIR}"/build.log 2>&1); then
+      echo -e "INFO: applied patch $(basename "${PATCH_FILE}") to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
+    else
+      echo -e "ERROR: patch $(basename "${PATCH_FILE}") does not apply to ${LIB_NAME} and is not already applied\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo -e "\nffmpeg-kit: patch $(basename "${PATCH_FILE}") failed to apply to ${LIB_NAME}\n"
+      echo -e "This is deliberate. These patches carry security backports; a build that\n"
+      echo -e "silently skipped one would ship an artifact that does not contain the fix.\n"
+      exit 1
+    fi
+  done
+
+  return 0
+}
+
 download_library_source() {
   local SOURCE_REPO_URL=""
   local LIB_NAME="$1"
