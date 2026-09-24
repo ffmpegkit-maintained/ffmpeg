@@ -23,6 +23,20 @@ move to.
   shape as the `drawtext` bug — a library that was built, linked, and never reached
   `configure`.
 
+## Both properties were witnessed, not assumed
+
+Run in isolation on 2026-09-24, against a throwaway git tree:
+
+| case | result |
+|---|---|
+| a patch that does not apply | `failed to apply`, exit 1, the line after the call never printed |
+| the same patch applied twice | applied once, then `already applied, skipped`, exit 0, content correct |
+
+The second run is the one that matters for CI, where `src/` comes back from a cache
+already patched. The first is the one that matters for security: ⚠️ an earlier version
+of this guard called `exit 1` from inside a command substitution, so it killed only the
+subshell and the build carried on. It read exactly like a working guard.
+
 ## Adding one
 
 1. Drop the `.patch` in `patches/<library>/`, numbered so the order is explicit.
