@@ -1,0 +1,5 @@
+# A patch file must reach the build byte for byte. Any line-ending conversion makes
+# `git apply` fail to match the source, and the patch mechanism is deliberately loud --
+# so a CRLF checkout on one platform would stop the build for a reason that has nothing
+# to do with the patch.
+*.patch -text
