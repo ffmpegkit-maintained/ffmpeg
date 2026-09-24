@@ -43,6 +43,27 @@ in-process instead of returning an error code. That affects every user of
 `-filter_complex`, not only `drawtext` users — a missing filter is simply one way to 
 reach it.
 
+**Measured on a device, 2026-09-24.** Pixel 7 Pro, Android 16, arm64, running the
+faulty June AAR (`ffmpeg-kit-full-gpl-8.1`, FFmpeg n8.1.2) so the harness could be
+checked against a build known to be broken:
+
+| check | result on the faulty AAR |
+|---|---|
+| `drawtext` renders a frame | **fails** — `No such filter: 'drawtext'` |
+| a bad `-filter_complex` returns an error | passes |
+| `-filter_complex` with `drawtext`, the reporter's exact shape | returns an error |
+| the process still answers afterwards | passes |
+
+The first line reproduces the report exactly. The last line does **not** prove the crash
+fix, and should not be read as doing so: the defect is an uninitialised `AVFilterInOut*`
+freed on the error path, so what gets freed is whatever the stack held, and whether it
+segfaults depends on the preceding call, the device and the Android version. On this
+device it happens to be null. The reporter saw it on Android 12.
+
+A check that cannot see the defect returns a verdict of success for that defect. The
+evidence for the second fix is the code and the reporter's tombstone, which names
+`avfilter_inout_free` directly under `init_complex_filtergraph`; not a green line here.
+
 ## Full / Full GPL Maven aliases (6.0.3 / 7.1.6 / 8.1.7) — 2026-07-12
 
 Completes the 8-name Arthenica tier matrix on all three LTS lines: `ffmpeg-kit-full` and
