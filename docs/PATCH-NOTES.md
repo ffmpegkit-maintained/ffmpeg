@@ -43,6 +43,22 @@ in-process instead of returning an error code. That affects every user of
 `-filter_complex`, not only `drawtext` users — a missing filter is simply one way to 
 reach it.
 
+**Which pipeline produces the reported artifact.** Two families of workflow build
+this repository, and they are easy to confuse:
+
+| workflow | produces | delivery |
+|---|---|---|
+| `build-*-free-*.yml` | `dev.ffmpegkit-maintained:ffmpeg-kit-*` | Maven Central, after manual verification |
+| `build.yml`, `build-gpl.yml`, `build-NN-{full,gpl}.yml` | the Gumroad tiers | private cache repo, then Gumroad |
+
+Issue #1 was filed against Maven Central artifacts, so the fix the reporter needs comes
+out of the **free** workflows. Both families were affected and both are fixed, but the
+order matters and it is the Maven side that is the reporter's.
+
+⚠️ Until 2026-09-24 the free workflows verified 16 KB alignment and the absence of
+paid-tier libraries, and nothing about what the build actually contained. They now run
+`tools/check-filters.py --pin` against the .aar they are about to hand over.
+
 **The 6.0 line is two different builds, and only one of them is affected.**
 Measured 2026-09-24, on the device, by asking ffmpeg's own filter table (`-filters`)
 rather than scanning strings:
