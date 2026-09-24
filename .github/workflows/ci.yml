@@ -70,3 +70,16 @@ jobs:
           done < <(git ls-files "*.sh")
           [ "$fail" -eq 0 ] || exit 1
           echo "All tracked shell scripts parse."
+      # The second defect of issue #1: a pointer freed on an error path that the
+      # failing call never wrote. No compiler flag sees it -- measured with the NDK's
+      # own clang, neither -Wall -Wextra nor -Wconditional-uninitialized says anything,
+      # because the address is handed to a callee and clang assumes the callee writes
+      # it. And no runtime test sees it either: freeing an uninitialised pointer is
+      # undefined behaviour, and 180 failing parses against the unfixed binary on a
+      # Pixel 7 Pro crashed nothing, the stack value there being null.
+      #
+      # Neither the compiler nor the device can witness this class of defect, so the
+      # source is read instead.
+      - name: No pointer freed on an error path without an initialiser
+        run: python3 tools/check-uninit-free.py
+

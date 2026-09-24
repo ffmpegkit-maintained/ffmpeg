@@ -59,6 +59,38 @@ order matters and it is the Maven side that is the reporter's.
 paid-tier libraries, and nothing about what the build actually contained. They now run
 `tools/check-filters.py --pin` against the .aar they are about to hand over.
 
+**The crash fix, and how it is checked now.** The second defect was
+`AVFilterInOut *inputs, *outputs, *cur;` -- no initialiser -- freed at the `fail:`
+label of `init_complex_filtergraph()`. `graph_parse()` writes `*inputs` only in its
+last call, `avfilter_graph_segment_apply`; an unknown filter fails before that and
+returns without touching it, so the error path freed whatever the stack held.
+
+Two ways of witnessing it were tried, and both failed for reasons worth recording:
+
+- **The compiler cannot see it.** Measured 2026-09-24 with the NDK's own clang on a
+  reduction of the real function: `-Wall -Wextra` is silent, and so is
+  `-Wconditional-uninitialized`, which exists for this exact shape. The variable's
+  address is handed to a callee, so clang assumes the callee initialises it. That is
+  why this survived `-Werror` builds for the life of the fork.
+- **The device cannot see it either.** Freeing an uninitialised pointer is undefined
+  behaviour, so a crash depends on what the previous call left on the stack. On a
+  Pixel 7 Pro, 180 failing parses of three shapes -- unknown filter first, unknown
+  filter after six valid ones, unknown option on a valid filter -- against the
+  *unfixed* binary crashed nothing. The value there happens to be null. The reporter
+  saw it on Android 12.
+
+⚠️ So neither green line means anything for this defect, and reading either as a
+verdict would be a mistake. What checks it is `tools/check-uninit-free.py`, run by CI:
+it flags a local pointer freed at a cleanup label when the call that was meant to
+write it jumps to that same label on failure. Witnessed both ways -- on the pre-fix
+file it names `inputs` at line 493 and the free at 524, which is the reporter's
+tombstone exactly; on the 39 vendored fftools files as they stand it passes.
+
+The rule is narrow on purpose. An earlier version also flagged `enc_stats_init`'s
+`val`, which is written by `unescape(&val, ...)` whose failure does a plain `return`
+and never reaches the label. Same address-passing shape, not a defect. A check that
+flags what is fine is how a check gets switched off.
+
 **The 6.0 line is two different builds, and only one of them is affected.**
 Measured 2026-09-24, on the device, by asking ffmpeg's own filter table (`-filters`)
 rather than scanning strings:
