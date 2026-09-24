@@ -3,3 +3,14 @@
 # so a CRLF checkout on one platform would stop the build for a reason that has nothing
 # to do with the patch.
 *.patch -text
+
+# A build script is executed by bash on a Linux runner. A CR at the end of every line
+# makes `source function.sh` fail at its first `{`, and bash then reports the symptom
+# -- "get_arch_name: command not found", four hundred times -- and never the cause.
+#
+# That is not hypothetical: the 8.1 security build of 2026-09-24 died that way. The
+# scripts had been edited from a Windows checkout with core.autocrlf=true, where the
+# working tree is CRLF by design; the conversion travelled into the commit.
+#
+# eol=lf makes the checkout LF on every platform, so what is edited is what runs.
+*.sh text eol=lf

@@ -42,3 +42,31 @@ jobs:
             exit 1
           fi
           echo "README.md's Maven Central version mentions are all live."
+
+  build-scripts-are-runnable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The 8.1 security build of 2026-09-24 died sourcing function.sh: the scripts had
+      # been edited from a Windows checkout with core.autocrlf=true, and the CRLF
+      # travelled into the commit. bash reported only the symptom -- "get_arch_name:
+      # command not found", four hundred times -- and never the cause.
+      #
+      # .gitattributes now pins *.sh to eol=lf. This reads back what the repository
+      # actually holds, and then asks bash whether it parses.
+      #
+      # The check lives in a Python tool rather than inline grep/awk on purpose: those
+      # read in text mode on Windows and silently strip the CR, so the first version of
+      # this guard reported "clean" for a file that was not. It was caught by running it
+      # against a CRLF witness, not by reading it.
+      - name: Shell scripts parse, and carry no CR
+        run: |
+          set -e
+          python3 tools/check-eol.py
+          fail=0
+          while IFS= read -r f; do
+            bash -n "$f" || { echo "::error file=$f::bash syntax error"; fail=1; }
+          done < <(git ls-files "*.sh")
+          [ "$fail" -eq 0 ] || exit 1
+          echo "All tracked shell scripts parse."

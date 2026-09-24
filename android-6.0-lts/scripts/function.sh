@@ -2132,129 +2132,129 @@ download() {
 #
 # 1. library name
 #
-
-#
-# Applies patches/<library>/*.patch to a downloaded source tree.
-#
-# Why this exists: until 2026-09-24 there was no way to carry a single upstream fix.
-# The only tool was the source pin, so closing four CVEs on the 6.0 line in July meant
-# rebasing the whole tree from n6.0 to n6.1.6 -- a large change to fix four small ones.
-# When upstream stops releasing on a branch, as it has on 7.1.x and 6.1.x, even that
-# hammer is gone.
-#
-# Two properties this has to have, and they are the reason it is not three lines:
-#
-#   IDEMPOTENT. CI restores src/ from a cache, so this runs against trees that are
-#   already patched as often as fresh ones. Each patch is reverse-checked first; one
-#   that is already applied is skipped, not applied twice.
-#
-#   LOUD. A security backport that quietly fails to apply is worse than no mechanism
-#   at all: the build stays green and the fix is not in the artifact. A patch that
-#   neither applies nor is already applied stops the build.
-#
-apply_library_patches() {
-  local LIB_NAME="$1"
-  local LIB_LOCAL_PATH="${BASEDIR}/src/${LIB_NAME}"
-  local PATCH_DIR="${BASEDIR}/patches/${LIB_NAME}"
-  local PATCH_FILE=""
-
-  if [ ! -d "${PATCH_DIR}" ]; then
-    return 0
-  fi
-
-  for PATCH_FILE in "${PATCH_DIR}"/*.patch; do
-    [ -e "${PATCH_FILE}" ] || continue
-
-    if (cd "${LIB_LOCAL_PATH}" && git apply --reverse --check "${PATCH_FILE}" 2>/dev/null); then
-      echo -e "INFO: patch $(basename "${PATCH_FILE}") already applied to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
-      continue
-    fi
-
-    if (cd "${LIB_LOCAL_PATH}" && git apply "${PATCH_FILE}" 1>>"${BASEDIR}"/build.log 2>&1); then
-      echo -e "INFO: applied patch $(basename "${PATCH_FILE}") to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
-    else
-      echo -e "ERROR: patch $(basename "${PATCH_FILE}") does not apply to ${LIB_NAME} and is not already applied\n" 1>>"${BASEDIR}"/build.log 2>&1
-      echo -e "\nffmpeg-kit: patch $(basename "${PATCH_FILE}") failed to apply to ${LIB_NAME}\n"
-      echo -e "This is deliberate. These patches carry security backports; a build that\n"
-      echo -e "silently skipped one would ship an artifact that does not contain the fix.\n"
-      exit 1
-    fi
-  done
-
-  return 0
-}
-
-
-#
-# Records which SOURCE_ID a checked-out tree was cloned from.
-#
-# Written next to the source rather than kept in a variable, because the thing it has
-# to survive is a CI cache: src/ is restored from a checkpoint pushed by an earlier
-# run, and nothing else in the restored tree says which tag it came from.
-#
-write_source_stamp() {
-  local LIB_NAME="$1"
-  local SOURCE_ID="$2"
-  echo "${SOURCE_ID}" > "${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id" 2>/dev/null || true
-}
-
-#
-# Drops any restored source whose pin has moved, and marks it for a rebuild.
-#
-# ⚠️ Two caches short-circuit a build, and a source pin has to clear BOTH:
-#
-#   library_is_downloaded()  skips the clone when src/<lib> exists
-#   library_is_installed()   skips the compile when prebuilt/<lib> exists
-#
-# Clearing only the first leaves the old .so in prebuilt/ and links it into the .aar.
-# The build goes green, the version string still reads the old tag, and the security
-# update it was supposed to carry is simply not there.
-#
-# That is not hypothetical. On 2026-09-24 the 8.1 pin was moved n8.1.2 -> n8.1.3 to
-# close CVE-2026-64830 and CVE-2026-64835, the build ran and passed, and the artifact
-# it verified was a checkpoint from June: same n8.1.2, same missing fixes.
-#
-# ⚠️ Called from the MAIN shell, never from inside download_library_source(), which
-# the caller invokes in a command substitution -- an export there would reach a
-# subshell and nothing else. The same trap cost this project a guard once already.
-#
-invalidate_stale_sources() {
-  local LIB_NAME=""
-  local SOURCE_ID=""
-  local STAMP=""
-  local SEEN=""
-  local REBUILD_VARIABLE=""
-
-  for LIB_NAME in "$@"; do
-    [ -d "${BASEDIR}/src/${LIB_NAME}" ] || continue
-
-    SOURCE_ID=$(get_library_source "${LIB_NAME}" 2)
-    [ -n "${SOURCE_ID}" ] || continue
-
-    STAMP="${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id"
-    SEEN=$(cat "${STAMP}" 2>/dev/null)
-
-    if [ "${SEEN}" == "${SOURCE_ID}" ]; then
-      continue
-    fi
-
-    if [ -z "${SEEN}" ]; then
-      # A checkpoint taken before stamps existed. We cannot tell what it holds, and
-      # "cannot tell" has to mean "rebuild": the alternative is trusting an unknown
-      # tree with a security pin.
-      echo -e "INFO: ${LIB_NAME} source carries no pin stamp -- rebuilding to be sure\n" 1>>"${BASEDIR}"/build.log 2>&1
-      echo "${LIB_NAME}: restored source has no pin stamp, rebuilding"
-    else
-      echo -e "INFO: ${LIB_NAME} pin moved ${SEEN} -> ${SOURCE_ID} -- dropping restored source\n" 1>>"${BASEDIR}"/build.log 2>&1
-      echo "${LIB_NAME}: pin moved ${SEEN} -> ${SOURCE_ID}, rebuilding"
-    fi
-
-    rm -rf "${BASEDIR}/src/${LIB_NAME}"
-    REBUILD_VARIABLE=$(echo "REBUILD_${LIB_NAME}" | sed "s/\-/\_/g")
-    export "${REBUILD_VARIABLE}"=1
-  done
-}
-
+
+#
+# Applies patches/<library>/*.patch to a downloaded source tree.
+#
+# Why this exists: until 2026-09-24 there was no way to carry a single upstream fix.
+# The only tool was the source pin, so closing four CVEs on the 6.0 line in July meant
+# rebasing the whole tree from n6.0 to n6.1.6 -- a large change to fix four small ones.
+# When upstream stops releasing on a branch, as it has on 7.1.x and 6.1.x, even that
+# hammer is gone.
+#
+# Two properties this has to have, and they are the reason it is not three lines:
+#
+#   IDEMPOTENT. CI restores src/ from a cache, so this runs against trees that are
+#   already patched as often as fresh ones. Each patch is reverse-checked first; one
+#   that is already applied is skipped, not applied twice.
+#
+#   LOUD. A security backport that quietly fails to apply is worse than no mechanism
+#   at all: the build stays green and the fix is not in the artifact. A patch that
+#   neither applies nor is already applied stops the build.
+#
+apply_library_patches() {
+  local LIB_NAME="$1"
+  local LIB_LOCAL_PATH="${BASEDIR}/src/${LIB_NAME}"
+  local PATCH_DIR="${BASEDIR}/patches/${LIB_NAME}"
+  local PATCH_FILE=""
+
+  if [ ! -d "${PATCH_DIR}" ]; then
+    return 0
+  fi
+
+  for PATCH_FILE in "${PATCH_DIR}"/*.patch; do
+    [ -e "${PATCH_FILE}" ] || continue
+
+    if (cd "${LIB_LOCAL_PATH}" && git apply --reverse --check "${PATCH_FILE}" 2>/dev/null); then
+      echo -e "INFO: patch $(basename "${PATCH_FILE}") already applied to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
+      continue
+    fi
+
+    if (cd "${LIB_LOCAL_PATH}" && git apply "${PATCH_FILE}" 1>>"${BASEDIR}"/build.log 2>&1); then
+      echo -e "INFO: applied patch $(basename "${PATCH_FILE}") to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
+    else
+      echo -e "ERROR: patch $(basename "${PATCH_FILE}") does not apply to ${LIB_NAME} and is not already applied\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo -e "\nffmpeg-kit: patch $(basename "${PATCH_FILE}") failed to apply to ${LIB_NAME}\n"
+      echo -e "This is deliberate. These patches carry security backports; a build that\n"
+      echo -e "silently skipped one would ship an artifact that does not contain the fix.\n"
+      exit 1
+    fi
+  done
+
+  return 0
+}
+
+
+#
+# Records which SOURCE_ID a checked-out tree was cloned from.
+#
+# Written next to the source rather than kept in a variable, because the thing it has
+# to survive is a CI cache: src/ is restored from a checkpoint pushed by an earlier
+# run, and nothing else in the restored tree says which tag it came from.
+#
+write_source_stamp() {
+  local LIB_NAME="$1"
+  local SOURCE_ID="$2"
+  echo "${SOURCE_ID}" > "${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id" 2>/dev/null || true
+}
+
+#
+# Drops any restored source whose pin has moved, and marks it for a rebuild.
+#
+# ⚠️ Two caches short-circuit a build, and a source pin has to clear BOTH:
+#
+#   library_is_downloaded()  skips the clone when src/<lib> exists
+#   library_is_installed()   skips the compile when prebuilt/<lib> exists
+#
+# Clearing only the first leaves the old .so in prebuilt/ and links it into the .aar.
+# The build goes green, the version string still reads the old tag, and the security
+# update it was supposed to carry is simply not there.
+#
+# That is not hypothetical. On 2026-09-24 the 8.1 pin was moved n8.1.2 -> n8.1.3 to
+# close CVE-2026-64830 and CVE-2026-64835, the build ran and passed, and the artifact
+# it verified was a checkpoint from June: same n8.1.2, same missing fixes.
+#
+# ⚠️ Called from the MAIN shell, never from inside download_library_source(), which
+# the caller invokes in a command substitution -- an export there would reach a
+# subshell and nothing else. The same trap cost this project a guard once already.
+#
+invalidate_stale_sources() {
+  local LIB_NAME=""
+  local SOURCE_ID=""
+  local STAMP=""
+  local SEEN=""
+  local REBUILD_VARIABLE=""
+
+  for LIB_NAME in "$@"; do
+    [ -d "${BASEDIR}/src/${LIB_NAME}" ] || continue
+
+    SOURCE_ID=$(get_library_source "${LIB_NAME}" 2)
+    [ -n "${SOURCE_ID}" ] || continue
+
+    STAMP="${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id"
+    SEEN=$(cat "${STAMP}" 2>/dev/null)
+
+    if [ "${SEEN}" == "${SOURCE_ID}" ]; then
+      continue
+    fi
+
+    if [ -z "${SEEN}" ]; then
+      # A checkpoint taken before stamps existed. We cannot tell what it holds, and
+      # "cannot tell" has to mean "rebuild": the alternative is trusting an unknown
+      # tree with a security pin.
+      echo -e "INFO: ${LIB_NAME} source carries no pin stamp -- rebuilding to be sure\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo "${LIB_NAME}: restored source has no pin stamp, rebuilding"
+    else
+      echo -e "INFO: ${LIB_NAME} pin moved ${SEEN} -> ${SOURCE_ID} -- dropping restored source\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo "${LIB_NAME}: pin moved ${SEEN} -> ${SOURCE_ID}, rebuilding"
+    fi
+
+    rm -rf "${BASEDIR}/src/${LIB_NAME}"
+    REBUILD_VARIABLE=$(echo "REBUILD_${LIB_NAME}" | sed "s/\-/\_/g")
+    export "${REBUILD_VARIABLE}"=1
+  done
+}
+
 download_library_source() {
   local SOURCE_REPO_URL=""
   local LIB_NAME="$1"
