@@ -175,6 +175,27 @@ jobs:
       # inside the built .aar based on --enable-gpl — no separate check
       # needed here beyond the paid build-81-gpl.yml's already-proven logic.
 
+      # ⚠️ This workflow produces the binary published on Maven Central. Until
+      # 2026-09-24 it verified 16 KB alignment and the absence of paid libraries, and
+      # nothing about what it actually contained -- which is how `drawtext` went missing
+      # from eleven released versions without a single red line. Reported as issue #1.
+      #
+      # Two assertions, neither satisfiable by a stale or wrong artifact:
+      #
+      #   the FFmpeg version inside libavutil.so matches the pin in scripts/source.sh
+      #   the filters this tier documents are actually in libavfilter.so
+      #
+      # A check that reads the build scripts confirms what we meant to do. This one
+      # reads what we are about to publish.
+      - name: Verify the built .aar matches the pin and the tier
+        run: |
+          set -e
+          aar="prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar"
+          test -f "$aar" || { echo "::error::no .aar produced at $aar"; exit 1; }
+          pin=$(awk '/^  ffmpeg\)/,/;;/' scripts/source.sh | grep -oE 'SOURCE_ID="[^"]+"' | head -1 | cut -d'"' -f2)
+          test -n "$pin" || { echo "::error::could not read the ffmpeg pin from scripts/source.sh"; exit 1; }
+          python3 ../tools/check-filters.py "$aar" --tier full-gpl --pin "$pin"
+
       - name: Upload AAR artifact
         uses: actions/upload-artifact@v4
         with:
