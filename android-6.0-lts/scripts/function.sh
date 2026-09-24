@@ -2045,6 +2045,10 @@ is_gpl_licensed() {
 
 downloaded_library_sources() {
 
+  # Before anything is reused: drop what the pin no longer matches. In the main
+  # shell, because this exports rebuild flags -- see invalidate_stale_sources.
+  invalidate_stale_sources "ffmpeg" $(for l in {1..50}; do get_library_name $((l - 1)); done)
+
   # DOWNLOAD FFMPEG SOURCE CODE FIRST
   DOWNLOAD_RESULT=$(download_library_source "ffmpeg")
   if [[ ${DOWNLOAD_RESULT} -ne 0 ]]; then
@@ -2180,6 +2184,77 @@ apply_library_patches() {
   return 0
 }
 
+
+#
+# Records which SOURCE_ID a checked-out tree was cloned from.
+#
+# Written next to the source rather than kept in a variable, because the thing it has
+# to survive is a CI cache: src/ is restored from a checkpoint pushed by an earlier
+# run, and nothing else in the restored tree says which tag it came from.
+#
+write_source_stamp() {
+  local LIB_NAME="$1"
+  local SOURCE_ID="$2"
+  echo "${SOURCE_ID}" > "${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id" 2>/dev/null || true
+}
+
+#
+# Drops any restored source whose pin has moved, and marks it for a rebuild.
+#
+# ⚠️ Two caches short-circuit a build, and a source pin has to clear BOTH:
+#
+#   library_is_downloaded()  skips the clone when src/<lib> exists
+#   library_is_installed()   skips the compile when prebuilt/<lib> exists
+#
+# Clearing only the first leaves the old .so in prebuilt/ and links it into the .aar.
+# The build goes green, the version string still reads the old tag, and the security
+# update it was supposed to carry is simply not there.
+#
+# That is not hypothetical. On 2026-09-24 the 8.1 pin was moved n8.1.2 -> n8.1.3 to
+# close CVE-2026-64830 and CVE-2026-64835, the build ran and passed, and the artifact
+# it verified was a checkpoint from June: same n8.1.2, same missing fixes.
+#
+# ⚠️ Called from the MAIN shell, never from inside download_library_source(), which
+# the caller invokes in a command substitution -- an export there would reach a
+# subshell and nothing else. The same trap cost this project a guard once already.
+#
+invalidate_stale_sources() {
+  local LIB_NAME=""
+  local SOURCE_ID=""
+  local STAMP=""
+  local SEEN=""
+  local REBUILD_VARIABLE=""
+
+  for LIB_NAME in "$@"; do
+    [ -d "${BASEDIR}/src/${LIB_NAME}" ] || continue
+
+    SOURCE_ID=$(get_library_source "${LIB_NAME}" 2)
+    [ -n "${SOURCE_ID}" ] || continue
+
+    STAMP="${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id"
+    SEEN=$(cat "${STAMP}" 2>/dev/null)
+
+    if [ "${SEEN}" == "${SOURCE_ID}" ]; then
+      continue
+    fi
+
+    if [ -z "${SEEN}" ]; then
+      # A checkpoint taken before stamps existed. We cannot tell what it holds, and
+      # "cannot tell" has to mean "rebuild": the alternative is trusting an unknown
+      # tree with a security pin.
+      echo -e "INFO: ${LIB_NAME} source carries no pin stamp -- rebuilding to be sure\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo "${LIB_NAME}: restored source has no pin stamp, rebuilding"
+    else
+      echo -e "INFO: ${LIB_NAME} pin moved ${SEEN} -> ${SOURCE_ID} -- dropping restored source\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo "${LIB_NAME}: pin moved ${SEEN} -> ${SOURCE_ID}, rebuilding"
+    fi
+
+    rm -rf "${BASEDIR}/src/${LIB_NAME}"
+    REBUILD_VARIABLE=$(echo "REBUILD_${LIB_NAME}" | sed "s/\-/\_/g")
+    export "${REBUILD_VARIABLE}"=1
+  done
+}
+
 download_library_source() {
   local SOURCE_REPO_URL=""
   local LIB_NAME="$1"
@@ -2214,6 +2289,7 @@ download_library_source() {
     echo ${DOWNLOAD_RC}
   else
     echo -e "\nINFO: $1 library downloaded" 1>>"${BASEDIR}"/build.log 2>&1
+    write_source_stamp "${LIB_NAME}" "${SOURCE_ID}"
     echo 0
   fi
 }

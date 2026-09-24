@@ -219,7 +219,65 @@ jobs:
       # tier, and Actions artifacts on a public repo are downloadable by any
       # signed-in GitHub user for free, not just collaborators - confirmed
       # directly and fixed by deleting everything already exposed that way.
-      # The build step above already runs `checkpoint` one last time right
-      # before it exits (success or fail), which pushes the finished
-      # prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar to the
-      # private ffmpeg-cache-Private repo's "full" branch - fetch it from there.
+      #
+      # The .aar therefore leaves this runner through the private cache repo, and
+      # ONLY through it. Restored at the start, pushed back here at the end.
+      #
+      # WARNING: the push half was removed on 2026-07-12 as "permanently broken
+      # since an org-level workflow-permissions lockdown", and the comment saying
+      # the build "already runs checkpoint one last time" was left behind. For ten
+      # weeks this workflow restored an old checkpoint, verified THAT artifact, went
+      # green, and discarded whatever it had just built. A build whose output nothing
+      # can reach is not a build.
+      # ⚠️ Verifies the .aar THIS run produced, which is not the same question as
+      # "is there an .aar".
+      #
+      # The steps above check 16 KB alignment and the GPL licence, and both passed for
+      # ten weeks on an artifact restored from a June checkpoint -- the build having
+      # rebuilt nothing and pushed nothing. Green, and about the wrong file.
+      #
+      # Two things are asserted here, and neither can be satisfied by a stale file:
+      #
+      #   the FFmpeg version inside libavutil.so matches the pin in scripts/source.sh
+      #   the filters this tier documents are actually in libavfilter.so
+      #
+      # The second is check-filters.py, added after issue #1: drawtext was absent from
+      # every published build because harfbuzz was compiled and linked but never passed
+      # to configure. Every check we had read the build inputs; this one reads the output.
+      - name: Verify the built .aar matches the pin and the tier
+        run: |
+          set -e
+          aar="prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar"
+          # From `ffmpeg)` to its `;;`, not a fixed number of lines: a comment
+          # added above SOURCE_ID pushed it out of a `-A 3` window, and the guard
+          # silently read nothing. A window that assumes a position guards what it
+          # assumed.
+          pin=$(awk '/^  ffmpeg\)/,/;;/' scripts/source.sh | grep -oE 'SOURCE_ID="[^"]+"' | head -1 | cut -d'"' -f2)
+          test -n "$pin" || { echo "::error::could not read the ffmpeg pin from scripts/source.sh"; exit 1; }
+          python3 ../tools/check-filters.py "$aar" --tier full --pin "$pin"
+
+      - name: Push the built .aar back to the private cache repo
+        env:
+          CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
+        run: |
+          set -e
+          aar_path="prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar"
+          test -f "$aar_path" || { echo "::error::no .aar to push at $aar_path"; exit 1; }
+
+          REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git"
+          WORK=$(mktemp -d)
+          git init -q "$WORK"
+          cd "$WORK"
+          git config user.email "ci@ffmpegkit-maintained.invalid"
+          git config user.name "ffmpeg-kit CI"
+
+          mkdir -p prebuilt/bundle-android-aar/ffmpeg-kit
+          cp "$GITHUB_WORKSPACE/$aar_path" prebuilt/bundle-android-aar/ffmpeg-kit/
+          for d in src prebuilt; do
+            [ -d "$GITHUB_WORKSPACE/$d" ] && cp -r "$GITHUB_WORKSPACE/$d" . || true
+          done
+
+          git add -A
+          git commit -q -m "checkpoint $(date -u +%Y-%m-%dT%H:%M:%SZ) from run ${GITHUB_RUN_ID}"
+          git push -f "$REMOTE" HEAD:full
+          echo "Pushed the built .aar to ffmpeg-cache-Private:full"

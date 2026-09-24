@@ -50,6 +50,15 @@ def filtres(chemin: str) -> bytes:
         return z.read(sorted(noms)[0])
 
 
+def libavutil(chemin: str) -> bytes:
+    """libavutil's bytes, where FFmpeg records both its version and its configure line."""
+    with zipfile.ZipFile(chemin) as z:
+        noms = [n for n in z.namelist() if n.endswith("/libavutil.so")]
+        if not noms:
+            sys.exit("no libavutil.so in " + chemin + " -- is this an FFmpegKit AAR?")
+        return z.read(sorted(noms)[0])
+
+
 def configure(chemin: str) -> str:
     """The configure line FFmpeg recorded into libavutil, or an empty string.
 
@@ -76,6 +85,9 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("aar")
     p.add_argument("--tier", choices=sorted(PROMESSES), default=None)
+    p.add_argument("--pin", default=None,
+                   help="the FFmpeg tag scripts/source.sh pins; fails when the "
+                        "artifact does not carry it")
     p.add_argument("--list", action="store_true",
                    help="print what was found instead of judging it")
     a = p.parse_args()
@@ -83,6 +95,26 @@ def main() -> int:
     tier = a.tier or tier_devine(a.aar)
     blob = filtres(a.aar)
     cfg = configure(a.aar)
+
+    # ⚠️ Is this the artifact we just built, or one that was lying around?
+    #
+    # A different question from "does it have the filters", and the one that went
+    # unasked for ten weeks: the CI restored a June checkpoint, verified ITS alignment
+    # and licence, went green, and discarded what it had just compiled. A pin moved for
+    # a security fix had no effect anyone could see.
+    #
+    # The version FFmpeg records inside libavutil answers it, and a stale file cannot
+    # fake it.
+    if a.pin:
+        vus = sorted({m.decode() for m in re.findall(rb"n[0-9]+\.[0-9]+\.[0-9]+",
+                                                     libavutil(a.aar))})
+        print("pin   : " + a.pin + "   found in libavutil: " + (", ".join(vus) or "(none)"))
+        if a.pin not in vus:
+            print("")
+            print("MISMATCH: the artifact does not carry the pinned FFmpeg version.")
+            print("  Either it was restored from a checkpoint instead of built, or the")
+            print("  source cache was not invalidated when the pin moved.")
+            return 1
 
     attendus = PROMESSES[tier]
     absents = [f for f in attendus if blob.count(f.encode()) == 0]
