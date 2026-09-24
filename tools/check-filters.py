@@ -54,22 +54,19 @@ PROMESSES = {
 PROMESSES["full-gpl"] = PROMESSES["full"]
 
 
-def filtres(chemin: str) -> bytes:
-    """libavfilter's bytes, from whichever ABI the AAR carries first."""
-    with zipfile.ZipFile(chemin) as z:
-        noms = [n for n in z.namelist() if n.endswith("/libavfilter.so")]
-        if not noms:
-            sys.exit("no libavfilter.so in " + chemin + " -- is this an FFmpegKit AAR?")
-        return z.read(sorted(noms)[0])
+def par_abi(chemin: str, lib: str) -> "dict[str, bytes]":
+    """One entry per ABI the AAR carries, keyed by abi name.
 
-
-def libavutil(chemin: str) -> bytes:
-    """libavutil's bytes, where FFmpeg records both its version and its configure line."""
+    ⚠️ This used to read `sorted(noms)[0]` -- the first ABI alphabetically, always
+    arm64-v8a -- and judge the whole artifact on it. An AAR shipping a good arm64 and
+    a broken x86_64 would have passed, and nothing else looks. A bench that does not
+    look somewhere returns a verdict of success for that place.
+    """
     with zipfile.ZipFile(chemin) as z:
-        noms = [n for n in z.namelist() if n.endswith("/libavutil.so")]
+        noms = [n for n in z.namelist() if n.endswith("/" + lib)]
         if not noms:
-            sys.exit("no libavutil.so in " + chemin + " -- is this an FFmpegKit AAR?")
-        return z.read(sorted(noms)[0])
+            sys.exit("no " + lib + " in " + chemin + " -- is this an FFmpegKit AAR?")
+        return {n.split("/")[-2]: z.read(n) for n in sorted(noms)}
 
 
 def configure(chemin: str) -> str:
@@ -78,12 +75,11 @@ def configure(chemin: str) -> str:
     Read because it turns "the filter is missing" into "and here is what configure was
     told", which is the difference between a bug report and a diagnosis.
     """
-    with zipfile.ZipFile(chemin) as z:
-        noms = [n for n in z.namelist() if n.endswith("/libavutil.so")]
-        if not noms:
-            return ""
-        m = re.search(rb"--enable-[^\x00]{20,8000}", z.read(sorted(noms)[0]))
-        return m.group().decode("utf-8", "replace") if m else ""
+    for blob in par_abi(chemin, "libavutil.so").values():
+        m = re.search(rb"--enable-[^\x00]{20,8000}", blob)
+        if m:
+            return m.group().decode("utf-8", "replace")
+    return ""
 
 
 def tier_devine(chemin: str) -> str:
@@ -106,7 +102,7 @@ def main() -> int:
     a = p.parse_args()
 
     tier = a.tier or tier_devine(a.aar)
-    blob = filtres(a.aar)
+    avfilter = par_abi(a.aar, "libavfilter.so")
     cfg = configure(a.aar)
 
     # ⚠️ Is this the artifact we just built, or one that was lying around?
@@ -119,30 +115,43 @@ def main() -> int:
     # The version FFmpeg records inside libavutil answers it, and a stale file cannot
     # fake it.
     if a.pin:
-        vus = sorted({m.decode() for m in re.findall(rb"n[0-9]+\.[0-9]+\.[0-9]+",
-                                                     libavutil(a.aar))})
-        print("pin   : " + a.pin + "   found in libavutil: " + (", ".join(vus) or "(none)"))
-        if a.pin not in vus:
+        mauvais = []
+        for abi, blob in par_abi(a.aar, "libavutil.so").items():
+            vus = sorted({m.decode()
+                          for m in re.findall(rb"n[0-9]+\.[0-9]+\.[0-9]+", blob)})
+            print("pin   : %s   %-12s libavutil: %s"
+                  % (a.pin, abi, ", ".join(vus) or "(none)"))
+            if a.pin not in vus:
+                mauvais.append(abi)
+        if mauvais:
             print("")
-            print("MISMATCH: the artifact does not carry the pinned FFmpeg version.")
+            print("MISMATCH in " + ", ".join(mauvais) +
+                  ": the artifact does not carry the pinned FFmpeg version.")
             print("  Either it was restored from a checkpoint instead of built, or the")
             print("  source cache was not invalidated when the pin moved.")
             return 1
 
     attendus = PROMESSES[tier]
-    absents = [f for f in attendus if blob.count(f.encode()) == 0]
-
     print("AAR   : " + a.aar)
     print("tier  : " + tier)
-    if a.list or absents:
-        for f in attendus:
-            n = blob.count(f.encode())
-            print("  %-10s %s" % (f, "present" if n else "MISSING"))
+    print("abis  : " + ", ".join(sorted(avfilter)))
+
+    absents = set()
+    for abi, blob in sorted(avfilter.items()):
+        manque = [f for f in attendus if blob.count(f.encode()) == 0]
+        absents.update(manque)
+        if a.list or manque:
+            print("  " + abi + ":")
+            for f in attendus:
+                print("    %-10s %s"
+                      % (f, "present" if blob.count(f.encode()) else "MISSING"))
 
     if not absents:
-        print("\nOK: the %d filters this tier promises are all present." % len(attendus))
+        print("\nOK: the %d filters this tier promises are present in all %d abi(s)."
+              % (len(attendus), len(avfilter)))
         return 0
 
+    absents = sorted(absents)
     print("\nMISSING from a tier that promises them: " + ", ".join(absents))
     if cfg:
         # The likely cause, when we can name it. Not a guess: these are the flags
