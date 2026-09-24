@@ -227,7 +227,16 @@ jobs:
           CI_CACHE_TOKEN: ${{ secrets.CI_CACHE_TOKEN }}
         run: |
           set -e
-          aar_path="prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar"
+          # ⚠️ The job runs with working-directory set to the line's folder, so a
+          # relative path here and $GITHUB_WORKSPACE/<same path> are two DIFFERENT
+          # files. The first version of this step tested one and copied the other:
+          # `test -f` passed, `cp` said No such file or directory, and the build died
+          # after twenty-two minutes of real compiling with nothing published.
+          #
+          # Same shape as the defect this whole release exists for -- the check read
+          # one thing, the action used another. One path, resolved once, used by both.
+          src_root=$(pwd)
+          aar_path="$src_root/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar"
           test -f "$aar_path" || { echo "::error::no .aar to push at $aar_path"; exit 1; }
 
           REMOTE="https://x-access-token:${CI_CACHE_TOKEN}@github.com/ffmpegkit-maintained/ffmpeg-cache-Private.git"
@@ -238,11 +247,11 @@ jobs:
           git config user.name "ffmpeg-kit CI"
 
           mkdir -p prebuilt/bundle-android-aar/ffmpeg-kit
-          cp "$GITHUB_WORKSPACE/$aar_path" prebuilt/bundle-android-aar/ffmpeg-kit/
+          cp "$aar_path" prebuilt/bundle-android-aar/ffmpeg-kit/
           # src/ and prebuilt/ are what makes the next run fast; carry them too when
           # they exist, so the checkpoint keeps its original purpose.
           for d in src prebuilt; do
-            [ -d "$GITHUB_WORKSPACE/$d" ] && cp -r "$GITHUB_WORKSPACE/$d" . || true
+            [ -d "$src_root/$d" ] && cp -r "$src_root/$d" . || true
           done
 
           git add -A
