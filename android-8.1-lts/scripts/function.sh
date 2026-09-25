@@ -2157,6 +2157,30 @@ download() {
 #   at all: the build stays green and the fix is not in the artifact. A patch that
 #   neither applies nor is already applied stops the build.
 #
+#
+# The manifest of security patches that went into this tree.
+#
+# WARNING: it lives under prebuilt/, not src/. Measured 2026-09-25: the checkpoint
+# stores src/<lib> as a git gitlink -- 48 libraries, 48 empty directories, zero files
+# -- because each one is a nested clone. prebuilt/ round-trips with its 1934 files.
+# A stamp written into src/ can never be compared against anything.
+#
+# Each line: <library> <patch file> <sha256 of the patch, 16 chars>
+#
+patch_manifest_path() {
+  echo "${BASEDIR}/prebuilt/.security-patches"
+}
+
+record_applied_patch() {
+  local LIB_NAME="$1"
+  local PATCH_FILE="$2"
+  local MANIFEST
+  MANIFEST=$(patch_manifest_path)
+  mkdir -p "$(dirname "${MANIFEST}")" 2>/dev/null || true
+  printf '%s %s %s\n' "${LIB_NAME}" "$(basename "${PATCH_FILE}")" \
+    "$(sha256sum "${PATCH_FILE}" | cut -c1-16)" >>"${MANIFEST}"
+}
+
 apply_library_patches() {
   local LIB_NAME="$1"
   local LIB_LOCAL_PATH="${BASEDIR}/src/${LIB_NAME}"
@@ -2167,16 +2191,30 @@ apply_library_patches() {
     return 0
   fi
 
+  # Le manifeste decrit CE passage : on retire les lignes de cette bibliotheque
+  # avant de les reecrire, sinon un cache restaure laisserait croire qu'une rustine
+  # retiree du depot est toujours dans le binaire.
+  local MANIFEST
+  MANIFEST=$(patch_manifest_path)
+  if [ -f "${MANIFEST}" ]; then
+    grep -v "^${LIB_NAME} " "${MANIFEST}" >"${MANIFEST}.tmp" 2>/dev/null || true
+    mv -f "${MANIFEST}.tmp" "${MANIFEST}" 2>/dev/null || true
+  fi
+
   for PATCH_FILE in "${PATCH_DIR}"/*.patch; do
     [ -e "${PATCH_FILE}" ] || continue
 
     if (cd "${LIB_LOCAL_PATH}" && git apply --reverse --check "${PATCH_FILE}" 2>/dev/null); then
       echo -e "INFO: patch $(basename "${PATCH_FILE}") already applied to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo "security patch already present: ${LIB_NAME} $(basename "${PATCH_FILE}")"
+      record_applied_patch "${LIB_NAME}" "${PATCH_FILE}"
       continue
     fi
 
     if (cd "${LIB_LOCAL_PATH}" && git apply "${PATCH_FILE}" 1>>"${BASEDIR}"/build.log 2>&1); then
       echo -e "INFO: applied patch $(basename "${PATCH_FILE}") to ${LIB_NAME}\n" 1>>"${BASEDIR}"/build.log 2>&1
+      echo "security patch applied: ${LIB_NAME} $(basename "${PATCH_FILE}")"
+      record_applied_patch "${LIB_NAME}" "${PATCH_FILE}"
     else
       echo -e "ERROR: patch $(basename "${PATCH_FILE}") does not apply to ${LIB_NAME} and is not already applied\n" 1>>"${BASEDIR}"/build.log 2>&1
       echo -e "\nffmpeg-kit: patch $(basename "${PATCH_FILE}") failed to apply to ${LIB_NAME}\n"
@@ -2227,8 +2265,9 @@ source_fingerprint() {
 #
 write_source_stamp() {
   local LIB_NAME="$1"
+  mkdir -p "${BASEDIR}/prebuilt" 2>/dev/null || true
   local SOURCE_ID="$2"
-  echo "$(source_fingerprint "${LIB_NAME}" "${SOURCE_ID}")" > "${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id" 2>/dev/null || true
+  echo "$(source_fingerprint "${LIB_NAME}" "${SOURCE_ID}")" > "${BASEDIR}/prebuilt/.source-id-${LIB_NAME}" 2>/dev/null || true
 }
 
 #
@@ -2267,7 +2306,7 @@ invalidate_stale_sources() {
     # une rustine ajoutee donne une empreinte differente, donc un arbre jete.
     SOURCE_ID=$(source_fingerprint "${LIB_NAME}" "${SOURCE_ID}")
 
-    STAMP="${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id"
+    STAMP="${BASEDIR}/prebuilt/.source-id-${LIB_NAME}"
     SEEN=$(cat "${STAMP}" 2>/dev/null)
 
     if [ "${SEEN}" == "${SOURCE_ID}" ]; then

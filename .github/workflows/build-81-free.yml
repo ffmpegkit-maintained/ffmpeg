@@ -134,6 +134,20 @@ jobs:
             echo
           done < <(find src -iname "config.log" -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2- | head -3)
 
+      # ⚠️ Les rustines de securite sont-elles DANS ce build ?
+      #
+      # Sur 6.0 et 7.1 les CVE arrivent par backport : `SOURCE_ID` ne bouge jamais, et
+      # rien dans le tag pinne ne distingue un arbre avec les correctifs d'un arbre
+      # sans. Un `prebuilt/` restaure du checkpoint peut donc expedier des binaires
+      # sans les correctifs, avec un `check-filters --pin` qui passe -- puisque la
+      # version, elle, est la bonne.
+      #
+      # Chaque rustine appliquee s'inscrit desormais dans `prebuilt/.security-patches`.
+      # Ceci compare ce manifeste au jeu de rustines du depot et refuse de continuer
+      # s'il en manque une, quelle qu'en soit la raison.
+      - name: The security patches are in this build
+        run: python3 ../tools/check-security-patches.py
+
       - name: Verify 16 KB page size alignment
         run: |
           set -e
