@@ -60,6 +60,15 @@ jobs:
       - name: One version per LTS line, across every coordinate
         run: python3 tools/check-versions.py
 
+      # README and MIGRATION told developers that x86_64 "isn't available prebuilt --
+      # compile it yourself". The 24 tier artifacts have carried x86_64 since they were
+      # first published; the sentence was wrong for 24 of the 25 coordinates, and it
+      # sent anyone on an emulator off to build from source for a binary already on
+      # Maven Central. Same shape as the rest: the document described what we believed
+      # we shipped.
+      - name: The docs describe the ABIs we actually publish
+        run: python3 tools/check-doc-abi.py
+
   build-scripts-are-runnable:
     runs-on: ubuntu-latest
     steps:

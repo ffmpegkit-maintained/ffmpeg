@@ -129,8 +129,8 @@ FFmpegKit.executeAsync("-i input.mp4 -c:v mpeg4 output.mp4", session -> {
 ## The full artifact matrix — free on Maven Central
 
 Every original FFmpegKit package, rebuilt and maintained. Pick the smallest one that covers the
-codecs your app needs — a smaller build means a smaller APK. All are `arm64-v8a`, SDK 35, 16 KB
-aligned. `MediaCodec` hardware acceleration and `zlib` are included in **every** variant (Android
+codecs your app needs — a smaller build means a smaller APK. All ship **arm64-v8a and
+x86_64**, SDK 35, 16 KB aligned. `MediaCodec` hardware acceleration and `zlib` are included in **every** variant (Android
 system libraries).
 
 | Artifact | Adds on top of base FFmpeg | License |
@@ -200,11 +200,12 @@ subtitles back into the video with FFmpegKit. Full API and examples:
 | NDK | r26c | r27c |
 | minSdk | 24 (Android 7.0) | 24 (Android 7.0) |
 | compileSdk / targetSdk | 35 (Android 15) | 35 (Android 15) |
-| ABI | arm64-v8a only | arm64-v8a only |
+| ABI | arm64-v8a + x86_64 | arm64-v8a + x86_64 |
 | 16 KB page alignment | Enforced | Enforced |
 
 16 KB alignment is enforced with `-Wl,-z,max-page-size=16384`; **CI fails the build if any `.so`
-isn't aligned.** Other ABIs are buildable from source via `android.sh` but not published.
+isn't aligned.** 32-bit ABIs (`armeabi-v7a`, `x86`) are buildable from source via
+`android.sh` but not published.
 
 ---
 
@@ -241,9 +242,14 @@ LGPL (`ffmpeg-kit-full` and the non-`-gpl` variants) is safe for closed-source a
 Start with **8.1** unless you're pinned to older behaviour. 6.0 and 7.1 are maintained and
 security-patched for apps that can't move to 8.x — not legacy dumps.
 
-**Why arm64-v8a only?**
-Modern apps targeting SDK 35 and 16 KB pages run on 64-bit devices. Other ABIs are buildable from
-source but not published, to keep the maintained surface focused.
+**Which ABIs are published?**
+`arm64-v8a` and `x86_64` — the second so the artifacts run on the default Android Studio
+emulator, not only on hardware. The 32-bit ABIs (`armeabi-v7a`, `x86`) are buildable from
+source but not published: apps targeting SDK 35 and 16 KB pages run on 64-bit devices.
+
+(Until 8.1.9 the primary `dev.ffmpegkit-maintained:ffmpeg` carried arm64-v8a alone, while
+every tier alias already carried both. This page said "arm64-v8a only" for all of them,
+which was wrong for 24 of the 25.)
 
 **Does it work with React Native or Flutter?**
 Not directly — this is a native Android AAR. RN/Flutter bindings are out of scope.

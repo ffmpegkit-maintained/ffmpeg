@@ -84,7 +84,8 @@ git submodule update --init --recursive
 # Full variant, all ABIs
 ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls
 
-# Full variant, arm64-v8a only (matches what CI builds and what's published)
+# Full variant, arm64-v8a only (the published artifacts also carry x86_64 --
+# CI drops only the 32-bit ABIs)
 ./android.sh --full --enable-android-media-codec --enable-android-zlib --disable-lib-gnutls \
   --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
 ```

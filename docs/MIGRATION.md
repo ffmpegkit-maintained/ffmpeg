@@ -49,7 +49,7 @@ No local `.aar`, no `flatDir`, and no separate `smart-exception-java` dependency
 
 ## What's different from upstream
 
-- **ABI coverage**: only `arm64-v8a` is published. If your app shipped `armeabi-v7a` or `x86_64` builds, those aren't available prebuilt — see [BUILD.md](BUILD.md) to compile them yourself with `android.sh --arch=<abi>`.
+- **ABI coverage**: `arm64-v8a` and `x86_64` are published, so the artifacts run on the default emulator as well as on hardware. If your app shipped a 32-bit `armeabi-v7a` or `x86` build, that isn't available prebuilt — see [BUILD.md](BUILD.md) to compile it yourself.
 - **minSdk**: 24, same floor as upstream's later releases — no change expected for most apps.
 - **compileSdk/targetSdk**: 35, with 16 KB memory page alignment enforced — see [README § Compatibility](../README.md#compatibility).
 - **License split by artifact, not by tier**: the non-`-gpl` artifacts are LGPL-3.0 (safe for closed-source apps); the `-gpl` ones are GPL-3.0 (copyleft applies to your app). Pick the non-`-gpl` name unless you specifically need `x264`/`x265`.
@@ -59,4 +59,4 @@ No local `.aar`, no `flatDir`, and no separate `smart-exception-java` dependency
 - **`Duplicate class com.arthenica.ffmpegkit.*`** — an old cached copy of the upstream artifact is still on the classpath. Remove it from `build.gradle` (step 1) and run `./gradlew --refresh-dependencies`.
 - **`Could not find com.arthenica:ffmpeg-kit-full`** (or any `com.arthenica:ffmpeg-kit-*`) — you still have the old Maven Central line somewhere (check submodules/flavors too); it will never resolve again upstream. Change the group ID, not the artifact name.
 - **`Could not find dev.ffmpegkit-maintained:ffmpeg-kit-<variant>:<version>`** — you're requesting a version that doesn't exist for that line, or mixing versions across lines (e.g. `7.1.7` when only `7.1.6` is published). Pin one of the exact versions in the table above.
-- **`UnsatisfiedLinkError` at runtime on a specific ABI** — your device/emulator ABI isn't `arm64-v8a`. Either target arm64-v8a-only devices or build the missing ABI from source ([BUILD.md](BUILD.md)).
+- **`UnsatisfiedLinkError` at runtime on a specific ABI** — your device or emulator is 32-bit (`armeabi-v7a`, `x86`); only the 64-bit ABIs are published. Build the missing one from source ([BUILD.md](BUILD.md)). On an x86_64 emulator this should not happen from 8.1.9 on: before it, the primary `:ffmpeg` artifact carried arm64-v8a alone, and the emulator would binary-translate it and crash inside the translation layer rather than fail cleanly.
