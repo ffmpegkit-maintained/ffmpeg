@@ -27,9 +27,14 @@ jobs:
           TOKEN=$(printf '%s:%s' "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64 -w0)
 
           echo "=== deployments (most recent first)"
+          # WARNING: POST with a JSON body. Without one the portal answers
+          # "Required request body is missing" (HTTP 400), which reads like a missing
+          # endpoint when in fact it answers perfectly well.
           code=$(curl -s -o /tmp/dep.json -w '%{http_code}' \
             -H "Authorization: Bearer $TOKEN" \
-            -X POST "https://central.sonatype.com/api/v1/publisher/deployments?ip=any&size=25" || true)
+            -H "Content-Type: application/json" \
+            -d '{"page":0,"size":25}' \
+            -X POST "https://central.sonatype.com/api/v1/publisher/deployments" || true)
           echo "HTTP $code"
           if [ "$code" = "200" ]; then
             python3 - <<'PY'
