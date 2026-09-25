@@ -43,6 +43,23 @@ jobs:
           fi
           echo "README.md's Maven Central version mentions are all live."
 
+      # One line, one number, everywhere. A developer reading ffmpeg-kit-full:8.1.8
+      # beside ffmpeg:8.1.7 cannot tell whether those are the same build, a fix that
+      # landed in one place, or a mistake -- and neither can we, six weeks later.
+      #
+      # The 8.1 line drifted because 8.1.8 was a POM-only republication: 8.1.7 and
+      # 8.1.8 of ffmpeg-kit-full-gpl are byte-identical, same SHA-256. Maven Central is
+      # immutable, so a metadata fix has to ship as a new version carrying the same
+      # binaries. It went out for the eight tier names and not for the primary or the
+      # aliases. Nothing was wrong with doing that -- what was missing is anything that
+      # noticed.
+      #
+      # WARNING: this is expected to FAIL until 6.0.4 / 7.1.7 / 8.1.9 are published
+      # across every coordinate. That is the point: the check says when the job is
+      # actually finished, not when we think it is.
+      - name: One version per LTS line, across every coordinate
+        run: python3 tools/check-versions.py
+
   build-scripts-are-runnable:
     runs-on: ubuntu-latest
     steps:
