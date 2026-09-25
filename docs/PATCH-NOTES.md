@@ -43,6 +43,43 @@ in-process instead of returning an error code. That affects every user of
 `-filter_complex`, not only `drawtext` users — a missing filter is simply one way to 
 reach it.
 
+**Acceptance run before publishing, 2026-09-25.** Everything above checks what the
+artifact *contains*. None of it encodes a second of video. A library can register 483
+filters and still write empty files, so each of the nine 8.1 coordinates was run
+through 21 real operations on a device, twice -- once on what is published today, once
+on 8.1.9 -- and the two compared:
+
+| tier | published | 8.1.9 | what changed |
+|---|---|---|---|
+| `ffmpeg` | 15 OK / 6 n-a | 15 / 6 | nothing |
+| `ffmpeg-kit-min` | 14 / 7 | 14 / 7 | nothing |
+| `ffmpeg-kit-min-gpl` | 16 / 5 | 16 / 5 | nothing |
+| `ffmpeg-kit-https` | 14 / 7 | 14 / 7 | nothing |
+| `ffmpeg-kit-https-gpl` | 16 / 5 | 16 / 5 | nothing |
+| `ffmpeg-kit-audio` | 16 / 5 | 16 / 5 | nothing |
+| `ffmpeg-kit-video` | 16 / 5 | **17** / 4 | `drawtext` now works |
+| `ffmpeg-kit-full` | 18 / 3 | **19** / 2 | `drawtext` now works |
+| `ffmpeg-kit-full-gpl` | 20 / 1 | **21** / 0 | `drawtext` now works |
+
+189 checks each side, **zero failures on either**. The operations are the ones an app
+actually performs: encode H.264/H.265/VP9/MP3/Opus, remux without re-encoding, scale +
+crop + hflip with the width read back after the crop, overlay, burn in ASS subtitles,
+volume and atempo, pull a thumbnail at 1.5 s, write a title and read it back,
+concatenate and check the duration doubled, and -- after two deliberate errors -- prove
+the process still answers.
+
+Each check reads the **file produced**, not the return code. An `ffmpeg` that returns 0
+while writing 0 bytes is exactly the kind of success that misleads.
+
+⚠️ Three of those checks were wrong when first written, and the shape is the one this
+whole release is about. They decided "this tier never had that codec" by **pattern-
+matching ffmpeg's error text**, which is guessing. The worst was the survival check: it
+wrote a PNG, so on a tier without the PNG encoder the check meant to detect a *crash*
+failed for an unrelated reason and read exactly like a crash. It now uses `-f null -`,
+which needs no encoder at all. The suite asks `-encoders`, `-filters`, `-muxers` and
+`-demuxers` what the build can do, and only requires what the build claims. Fixing that
+turned 8 false failures into 0 and moved no real verdict.
+
 **Which pipeline produces the reported artifact.** Two families of workflow build
 this repository, and they are easy to confuse:
 
