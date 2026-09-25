@@ -26,18 +26,41 @@ jobs:
           set -u
           TOKEN=$(printf '%s:%s' "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64 -w0)
 
-          # L'endpoint /deployments a refuse deux formes de corps. On arrete de
-          # deviner et on utilise celui qui est documente : « cette coordonnee
-          # est-elle publiee ? ». Il ne dit pas « en attente du bouton Publish »,
-          # mais couple au 404 de repo1 il situe le probleme.
-          for a in ffmpeg ffmpeg-kit-full-gpl ffmpeg-kit-min ffmpeg-kit-81; do
-            r=$(curl -s -H "Authorization: Bearer $TOKEN"               "https://central.sonatype.com/api/v1/publisher/published?namespace=dev.ffmpegkit-maintained&name=$a&version=8.1.9")
-            printf "  %-24s %s
-" "$a:8.1.9" "$r"
-          done
-
-          echo ""
-          echo "=== et 8.1.8, pour comparer avec une version qui EST publiee"
-          r=$(curl -s -H "Authorization: Bearer $TOKEN"             "https://central.sonatype.com/api/v1/publisher/published?namespace=dev.ffmpegkit-maintained&name=ffmpeg-kit-full-gpl&version=8.1.8")
-          printf "  %-24s %s
-" "ffmpeg-kit-full-gpl:8.1.8" "$r"
+          echo "=== deployments (most recent first)"
+          # WARNING: POST with a JSON body. Without one the portal answers
+          # "Required request body is missing" (HTTP 400), which reads like a missing
+          # endpoint when in fact it answers perfectly well.
+          code=$(curl -s -o /tmp/dep.json -w '%{http_code}' \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"page":0,"size":25}' \
+            -X POST "https://central.sonatype.com/api/v1/publisher/deployments" || true)
+          echo "HTTP $code"
+          if [ "$code" = "200" ]; then
+            python3 - <<'PY'
+          import json
+          d = json.load(open("/tmp/dep.json"))
+          items = d.get("deployments", d if isinstance(d, list) else [])
+          print("%-38s %-14s %s" % ("deploymentId", "state", "name"))
+          for x in items:
+              print("%-38s %-14s %s" % (
+                  x.get("deploymentId", "?"),
+                  x.get("deploymentState", "?"),
+                  (x.get("deploymentName") or "")[:60]))
+          etats = {}
+          for x in items:
+              etats[x.get("deploymentState", "?")] = etats.get(x.get("deploymentState", "?"), 0) + 1
+          print("\nsummary:", etats)
+          if any(k in ("VALIDATED", "PENDING") for k in etats):
+              print("")
+              print("WARNING: VALIDATED means the deployment passed checks and is waiting")
+              print("for someone to press Publish on central.sonatype.com. PUBLISHING means")
+              print("it is on its way and cannot be stopped. PUBLISHED means it is live.")
+          PY
+          else
+            echo "--- body (first 400 bytes) ---"
+            head -c 400 /tmp/dep.json || true
+            echo ""
+            echo "The deployments endpoint is not public API; if this is 404/405 the state"
+            echo "has to be read from the portal UI instead."
+          fi
