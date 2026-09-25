@@ -1,0 +1,9 @@
+#!/bin/sh
+# ⚠️ Cette garde s'execute AVANT le commit, et c'est tout l'interet.
+#
+# Le depot est public. Une verification en CI s'execute apres le push : le fichier
+# est deja public quand elle echoue, et une reecriture d'historique ne purge pas
+# vraiment GitHub -- ce projet l'a appris en juillet 2026 avec un CLAUDE.md.
+#
+# Pour l'activer dans un clone :   git config core.hooksPath .githooks
+exec python3 tools/check-no-paid-binaries.py --staged

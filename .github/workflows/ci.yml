@@ -106,6 +106,14 @@ jobs:
       #
       # Neither the compiler nor the device can witness this class of defect, so the
       # source is read instead.
+      # Second net only. The real protection is that the .aar never enters the tree
+      # (test-app takes it with -PtestAar=<path>) and a pre-commit hook that refuses
+      # the commit -- `git config core.hooksPath .githooks`. This step runs after the
+      # push, when a paid artifact would already be public, so it exists for a clone
+      # that never set the hook, not as the guard itself.
+      - name: No unexpected binary is tracked
+        run: python3 tools/check-no-paid-binaries.py
+
       - name: No pointer freed on an error path without an initialiser
         run: python3 tools/check-uninit-free.py
 

@@ -42,9 +42,28 @@ google-services.json
 # Local Claude Code permission overrides - not shared, this is a public repo
 .claude/
 
-# Temporary local smoke-test harness (real-device verification for the
-# 7.1 port, see CLAUDE.md) - not part of the project, never commit
-/test-app/
+# Real-device test harness. Written as a throwaway for the 7.1 port, and not
+# throwaway any more: in September 2026 it caught three defects that would
+# otherwise have shipped -- two tiers that could not load at all, and a primary
+# artifact that crashed inside the emulator's binary translator. Neither the
+# compiler nor CI could see any of them.
+#
+# It is tracked now, minus everything generated.
+#
+# WARNING: the .aar under test NEVER enters this tree. This repo is public and the
+# harness also tests paid tiers, so it takes the artifact by path:
+#
+#     ./gradlew :app:assembleDebug -PtestAar=/absolute/path/to/ffmpeg-kit.aar
+#
+# A CI check would not protect this. It runs AFTER the push, when the file is
+# already public, and rewriting history does not truly purge GitHub -- this project
+# learned that in July 2026. The only real protection is that the file is never
+# copied in. app/libs/ stays ignored as a second line, for hand-run experiments.
+/test-app/app/libs/
+/test-app/**/build/
+/test-app/.gradle/
+/test-app/.kotlin/
+/test-app/local.properties
 
 # Internal project notes (Gumroad IDs, pricing, secrets names) - not for a public repo
 CLAUDE.md
