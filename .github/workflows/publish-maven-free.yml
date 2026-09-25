@@ -64,13 +64,13 @@ jobs:
           ARTIFACT="ffmpeg"
           if [ "$MAJOR" = "8" ]; then
             LTS="android-8.1-lts"
-            AAR_NAME="ffmpeg-kit-free81-${NUM}-arm64-v8a.aar"
+            AAR_NAME="ffmpeg-kit-free81-${NUM}-arm64-v8a-x86_64.aar"
           elif [ "$MAJOR" = "7" ]; then
             LTS="android-7.1-lts"
-            AAR_NAME="ffmpeg-kit-free71-${NUM}-arm64-v8a.aar"
+            AAR_NAME="ffmpeg-kit-free71-${NUM}-arm64-v8a-x86_64.aar"
           else
             LTS="android-6.0-lts"
-            AAR_NAME="ffmpeg-kit-free-${NUM}-arm64-v8a.aar"
+            AAR_NAME="ffmpeg-kit-free-${NUM}-arm64-v8a-x86_64.aar"
           fi
           # Two distinct versions, and conflating them is the trap this input exists
           # to avoid. `version` names the AAR files inside the GitHub Release and must
@@ -94,10 +94,17 @@ jobs:
           AAR_NAME="${{ steps.meta.outputs.aar_name }}"
           DEST="${LTS}/android/ffmpeg-kit-android-lib/build/outputs/aar/ffmpeg-kit-release.aar"
           mkdir -p "$(dirname "$DEST")"
-          gh release download "${{ github.event.inputs.release_tag }}" \
-            --repo "$GITHUB_REPOSITORY" \
-            --pattern "$AAR_NAME" \
-            --output "$DEST"
+          # ⚠️ Le primaire porte arm64-v8a + x86_64 depuis 2026-09-24 et son fichier
+          # le dit. Les releases anterieures portent l'ancien nom, et republier une
+          # ancienne version est un cas reel -- c'est a quoi sert `publish_version`.
+          # On essaie le nom actuel, puis l'ancien.
+          ANCIEN_NOM="${AAR_NAME/-arm64-v8a-x86_64.aar/-arm64-v8a.aar}"
+          if ! gh release download "${{ github.event.inputs.release_tag }}" \
+            --repo "$GITHUB_REPOSITORY" --pattern "$AAR_NAME" --output "$DEST"; then
+            echo "::notice::$AAR_NAME absent de la release, essai avec $ANCIEN_NOM"
+            gh release download "${{ github.event.inputs.release_tag }}" \
+              --repo "$GITHUB_REPOSITORY" --pattern "$ANCIEN_NOM" --output "$DEST"
+          fi
           echo "Downloaded: $(du -sh "$DEST")"
 
       - name: Download https/https-gpl AARs from GitHub Release (https_aliases_only mode)

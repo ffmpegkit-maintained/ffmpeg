@@ -21,7 +21,7 @@ on:
 
 jobs:
   build:
-    name: Build ffmpeg-kit 8.1 LTS (free, arm64-v8a)
+    name: Build ffmpeg-kit 8.1 LTS (free, arm64-v8a + x86_64)
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     permissions:
@@ -89,7 +89,7 @@ jobs:
             echo "No ci-cache-81-free branch yet - starting fresh"
           fi
 
-      - name: Build free variant (arm64-v8a only)
+      - name: Build free variant (arm64-v8a + x86_64)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -99,7 +99,7 @@ jobs:
           ./android.sh \
             --enable-libaom --enable-dav1d --enable-libvpx \
             --enable-opus --enable-libvorbis --enable-speex \
-            --disable-arm-v7a --disable-arm-v7a-neon --disable-x86 --disable-x86-64
+            --disable-arm-v7a --disable-arm-v7a-neon --disable-x86
           BUILD_EXIT=$?
           exit "$BUILD_EXIT"
 
@@ -155,7 +155,7 @@ jobs:
       - name: Upload AAR artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ffmpeg-kit-81-free-arm64-v8a
+          name: ffmpeg-kit-81-free-arm64-v8a-x86_64
           path: android-8.1-lts/prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
 
       # Attach the AAR to the corresponding vX.Y.Z-lts-android GitHub release.
@@ -168,7 +168,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           VERSION="${VERSION%-free81}"
           RELEASE_TAG="v${VERSION}-lts-android"
-          DEST="ffmpeg-kit-free81-${VERSION}-arm64-v8a.aar"
+          DEST="ffmpeg-kit-free81-${VERSION}-arm64-v8a-x86_64.aar"
           cp prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar "$DEST"
           gh release upload "$RELEASE_TAG" "$DEST" --clobber --repo "$GITHUB_REPOSITORY"
 
