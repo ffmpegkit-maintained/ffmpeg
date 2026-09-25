@@ -233,7 +233,17 @@ jobs:
             if curl -sf "$POM_URL" > /dev/null 2>&1; then
               echo "Version ${VERSION} of ${ARTIFACT} already on Maven Central — skipping."
             else
-              ./gradlew :ffmpeg-kit-android-lib:publishAndReleaseToMavenCentral \
+              # ⚠️ Les quatre taches nommees, et pas `publishAndReleaseToMavenCentral`.
+              # Cette tache agregee publie les DOUZE publications declarees, alors que
+              # ce mode ne telecharge que l'AAR primaire : les huit paliers arrivent
+              # par leurs modes dedies. Gradle valide avant d'envoyer et s'arretait sur
+              # « Invalid publication 'mavenAudio': artifact file does not exist ».
+              # Le nom de l'etape disait « primary + redirects » ; la commande en
+              # faisait autre chose.
+              ./gradlew :ffmpeg-kit-android-lib:publishMavenPublicationToMavenCentralRepository \
+                :ffmpeg-kit-android-lib:publishMavenRedirectKitPublicationToMavenCentralRepository \
+                :ffmpeg-kit-android-lib:publishMavenRedirectDashPublicationToMavenCentralRepository \
+                :ffmpeg-kit-android-lib:publishMavenRedirectFreePublicationToMavenCentralRepository \
                 --no-configuration-cache --no-daemon \
                 -x :ffmpeg-kit-android-lib:bundleReleaseAar \
                 -Ppublish.version="${PUBLISH_VERSION}"
