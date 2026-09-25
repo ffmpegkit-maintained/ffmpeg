@@ -2186,6 +2186,34 @@ apply_library_patches() {
 
 
 #
+# The fingerprint a checked-out tree should carry: the upstream tag AND the patch set
+# applied on top of it.
+#
+# WARNING: the tag alone is not enough. On the 7.1 and 6.0 lines upstream has published
+# no newer point release, so their CVE fixes arrive as patches and SOURCE_ID never
+# moves. A stamp holding only the tag would match a June tree that predates those
+# patches, the tree would be kept, prebuilt/ffmpeg would be reused, and the build would
+# republish binaries with neither the security backports nor harfbuzz -- while
+# check-filters --pin passed, because the version really is the pinned one.
+#
+# A stamp has to describe what the tree contains, not only where it came from.
+#
+source_fingerprint() {
+  local LIB_NAME="$1"
+  local SOURCE_ID="$2"
+  local PATCH_DIR="${BASEDIR}/patches/${LIB_NAME}"
+  local PATCH_HASH="nopatch"
+
+  # Un dossier existant mais vide doit rendre "nopatch", pas le hash de la chaine
+  # vide : deux representations du meme etat invalideraient un arbre sain.
+  if [ -d "${PATCH_DIR}" ] && ls "${PATCH_DIR}"/*.patch >/dev/null 2>&1; then
+    PATCH_HASH=$(cat "${PATCH_DIR}"/*.patch | sha256sum | cut -c1-16)
+  fi
+
+  echo "${SOURCE_ID}+${PATCH_HASH}"
+}
+
+#
 # Records which SOURCE_ID a checked-out tree was cloned from.
 #
 # Written next to the source rather than kept in a variable, because the thing it has
@@ -2195,7 +2223,7 @@ apply_library_patches() {
 write_source_stamp() {
   local LIB_NAME="$1"
   local SOURCE_ID="$2"
-  echo "${SOURCE_ID}" > "${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id" 2>/dev/null || true
+  echo "$(source_fingerprint "${LIB_NAME}" "${SOURCE_ID}")" > "${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id" 2>/dev/null || true
 }
 
 #
@@ -2230,6 +2258,9 @@ invalidate_stale_sources() {
 
     SOURCE_ID=$(get_library_source "${LIB_NAME}" 2)
     [ -n "${SOURCE_ID}" ] || continue
+    # L'empreinte porte le tag ET le jeu de rustines : un tag inchange avec
+    # une rustine ajoutee donne une empreinte differente, donc un arbre jete.
+    SOURCE_ID=$(source_fingerprint "${LIB_NAME}" "${SOURCE_ID}")
 
     STAMP="${BASEDIR}/src/${LIB_NAME}/.ffmpeg-kit-source-id"
     SEEN=$(cat "${STAMP}" 2>/dev/null)
