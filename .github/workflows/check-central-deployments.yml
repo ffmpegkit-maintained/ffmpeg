@@ -1,0 +1,61 @@
+name: Check Central Portal deployments
+
+# Diagnostic only. It publishes nothing and changes nothing -- it asks the Sonatype
+# Central Portal what state our deployments are in.
+#
+# Why it exists: after publishing 8.1.9, five workflow runs went green, the artifacts
+# were signed and uploaded, and nothing appeared on Maven Central. From outside there
+# is no way to tell "still propagating" from "validated, waiting for someone to press
+# Publish". The credentials that could answer are organisation secrets, available here
+# and nowhere else.
+#
+# The token is built from OSSRH_USERNAME/OSSRH_PASSWORD and never printed.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deployments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the Central Portal
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        run: |
+          set -u
+          TOKEN=$(printf '%s:%s' "$OSSRH_USERNAME" "$OSSRH_PASSWORD" | base64 -w0)
+
+          echo "=== deployments (most recent first)"
+          code=$(curl -s -o /tmp/dep.json -w '%{http_code}' \
+            -H "Authorization: Bearer $TOKEN" \
+            -X POST "https://central.sonatype.com/api/v1/publisher/deployments?ip=any&size=25" || true)
+          echo "HTTP $code"
+          if [ "$code" = "200" ]; then
+            python3 - <<'PY'
+          import json
+          d = json.load(open("/tmp/dep.json"))
+          items = d.get("deployments", d if isinstance(d, list) else [])
+          print("%-38s %-14s %s" % ("deploymentId", "state", "name"))
+          for x in items:
+              print("%-38s %-14s %s" % (
+                  x.get("deploymentId", "?"),
+                  x.get("deploymentState", "?"),
+                  (x.get("deploymentName") or "")[:60]))
+          etats = {}
+          for x in items:
+              etats[x.get("deploymentState", "?")] = etats.get(x.get("deploymentState", "?"), 0) + 1
+          print("\nsummary:", etats)
+          if any(k in ("VALIDATED", "PENDING") for k in etats):
+              print("")
+              print("WARNING: VALIDATED means the deployment passed checks and is waiting")
+              print("for someone to press Publish on central.sonatype.com. PUBLISHING means")
+              print("it is on its way and cannot be stopped. PUBLISHED means it is live.")
+          PY
+          else
+            echo "--- body (first 400 bytes) ---"
+            head -c 400 /tmp/dep.json || true
+            echo ""
+            echo "The deployments endpoint is not public API; if this is 404/405 the state"
+            echo "has to be read from the portal UI instead."
+          fi
