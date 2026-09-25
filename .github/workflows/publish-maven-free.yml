@@ -214,9 +214,10 @@ jobs:
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
               -Ppublish.version="${PUBLISH_VERSION}"
           elif [ "${{ github.event.inputs.redirects_only }}" = "true" ]; then
-            echo "Redirects-only mode: publishing search-alias publications, skipping the primary artifact."
+            echo "Redirects-only mode: publishing the search aliases AND the legacy ffmpeg-kit-free* name, skipping the primary artifact."
             ./gradlew :ffmpeg-kit-android-lib:publishMavenRedirectKitPublicationToMavenCentralRepository \
               :ffmpeg-kit-android-lib:publishMavenRedirectDashPublicationToMavenCentralRepository \
+              :ffmpeg-kit-android-lib:publishMavenRedirectFreePublicationToMavenCentralRepository \
               --no-configuration-cache --no-daemon \
               -x :ffmpeg-kit-android-lib:bundleReleaseAar \
               -Ppublish.version="${PUBLISH_VERSION}"

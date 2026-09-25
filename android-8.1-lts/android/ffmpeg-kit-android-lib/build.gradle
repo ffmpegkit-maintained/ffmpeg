@@ -94,9 +94,66 @@ tasks.register('redirectKitSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redi
 tasks.register('redirectDashSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-dash'; archiveClassifier = 'sources' }
 tasks.register('redirectKitJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-kit'; archiveClassifier = 'javadoc' }
 tasks.register('redirectDashJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-dash'; archiveClassifier = 'javadoc' }
+tasks.register('redirectFreeSourcesJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-free'; archiveClassifier = 'sources' }
+tasks.register('redirectFreeJavadocJar', Jar) { archiveBaseName = 'ffmpegkit-redirect-free'; archiveClassifier = 'javadoc' }
 
 publishing {
     publications {
+        // A legacy name, republished as a POM-only redirect so its users keep
+        // getting updates.
+        //
+        // ffmpeg-kit-free-81 shipped a real AAR until 8.1.7, then no build.gradle produced it
+        // any more. Anyone still on it is frozen: they will never see a newer version,
+        // and -- this is the part that matters -- nothing tells them, because Gradle
+        // and Android Studio only offer an upgrade when a newer version exists under
+        // the SAME artifactId. A dead name is silent, not loud.
+        //
+        // Publishing it at every release fixes both halves: the IDE offers the bump,
+        // and taking it resolves to `ffmpeg` of the same version with no code change.
+        // Same mechanism as the ffmpegkit-81 / ffmpeg-kit-81 aliases above --
+        // one gesture, one verb.
+        mavenRedirectFree(MavenPublication) {
+            groupId    = 'dev.ffmpegkit-maintained'
+            artifactId = 'ffmpeg-kit-free-81'
+            version    = publishVersion
+            artifact(tasks.named('redirectFreeSourcesJar'))
+            artifact(tasks.named('redirectFreeJavadocJar'))
+            pom {
+                name        = 'FFmpegKit Android 8.1 (legacy name: ffmpeg-kit-free-81 -> ffmpeg)'
+                description = 'Legacy artifact name, kept publishing so existing users keep receiving updates. It resolves to dev.ffmpegkit-maintained:ffmpeg of the same version -- the 8.1 LTS Free tier, identical classes and packages. New projects should depend on dev.ffmpegkit-maintained:ffmpeg directly.'
+                inceptionYear = '2026'
+                url         = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                licenses {
+                    license {
+                        name         = 'GNU Lesser General Public License v3.0'
+                        url          = 'https://github.com/ffmpegkit-maintained/ffmpeg/blob/main/LICENSE'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id   = 'jokobee'
+                        name = 'Jokobee'
+                        url  = 'https://www.jokobee.com'
+                        email = 'contact@jokobee.com'
+                    }
+                }
+                scm {
+                    url                 = 'https://github.com/ffmpegkit-maintained/ffmpeg'
+                    connection          = 'scm:git:git://github.com/ffmpegkit-maintained/ffmpeg.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/ffmpegkit-maintained/ffmpeg.git'
+                }
+                withXml {
+                    def dep = asNode().appendNode('dependencies').appendNode('dependency')
+                    dep.appendNode('groupId',    'dev.ffmpegkit-maintained')
+                    dep.appendNode('artifactId', 'ffmpeg')
+                    dep.appendNode('version',    publishVersion)
+                    dep.appendNode('scope',      'compile')
+                    dep.appendNode('type',       'aar')
+                }
+            }
+        }
+
         mavenRedirectKit(MavenPublication) {
             groupId    = 'dev.ffmpegkit-maintained'
             artifactId = 'ffmpegkit-81'
