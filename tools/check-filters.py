@@ -52,6 +52,10 @@ PROMESSES = {
              "drawtext", "subtitles", "ass", "drawbox"],
 }
 PROMESSES["full-gpl"] = PROMESSES["full"]
+# Tiers that exist and promise no filter in particular: the dependency and pin
+# checks still have to run on them, and argparse used to reject the name.
+for _t in ("min", "min-gpl", "https", "https-gpl", "audio", "video"):
+    PROMESSES.setdefault(_t, [])
 
 
 def par_abi(chemin: str, lib: str) -> "dict[str, bytes]":
@@ -80,6 +84,72 @@ def configure(chemin: str) -> str:
         if m:
             return m.group().decode("utf-8", "replace")
     return ""
+
+
+# Shared libraries an .aar is expected to carry itself. The rest come from the device.
+FOURNIES_PAR_ANDROID = {
+    "liblog.so", "libandroid.so", "libdl.so", "libc.so", "libm.so", "libstdc++.so",
+    "libmediandk.so", "libcamera2ndk.so", "libz.so", "libOpenSLES.so", "libaaudio.so",
+    "libEGL.so", "libGLESv1_CM.so", "libGLESv2.so", "libGLESv3.so", "libjnigraphics.so",
+    "libvulkan.so", "libnativewindow.so", "libsync.so", "libbinder_ndk.so",
+}
+
+
+def dt_needed(blob: bytes) -> "set[str]":
+    """The DT_NEEDED entries of an ELF64 little-endian shared object.
+
+    ⚠️ Read from .dynamic, not by grepping the file for lib*.so. The grep version of
+    this check reported libx265.so and libOpenCL.so as missing dependencies of the
+    full-gpl tier -- strings living inside statically linked x265 code, nothing to do
+    with linking. A false positive is how a check gets switched off.
+    """
+    import struct
+    if blob[:4] != b"\x7fELF" or blob[4] != 2:      # ELF64 seulement (arm64, x86_64)
+        return set()
+    e_shoff, = struct.unpack_from("<Q", blob, 0x28)
+    e_shentsize, e_shnum = struct.unpack_from("<HH", blob, 0x3A)
+    dynamique = dynstr = None
+    for i in range(e_shnum):
+        o = e_shoff + i * e_shentsize
+        sh_type, = struct.unpack_from("<I", blob, o + 4)
+        sh_offset, = struct.unpack_from("<Q", blob, o + 0x18)
+        sh_size, = struct.unpack_from("<Q", blob, o + 0x20)
+        if sh_type == 6:                              # SHT_DYNAMIC
+            dynamique = (sh_offset, sh_size)
+        elif sh_type == 3 and dynstr is None:         # SHT_STRTAB
+            dynstr = (sh_offset, sh_size)
+        elif sh_type == 11:                           # SHT_DYNSYM -> son lien est .dynstr
+            sh_link, = struct.unpack_from("<I", blob, o + 0x28)
+            lo = e_shoff + sh_link * e_shentsize
+            dynstr = (struct.unpack_from("<Q", blob, lo + 0x18)[0],
+                      struct.unpack_from("<Q", blob, lo + 0x20)[0])
+    if not dynamique or not dynstr:
+        return set()
+
+    noms = set()
+    off, taille = dynamique
+    for p in range(off, off + taille, 16):
+        d_tag, d_val = struct.unpack_from("<Qq", blob, p)
+        if d_tag == 0:                                # DT_NULL
+            break
+        if d_tag == 1:                                # DT_NEEDED
+            base = dynstr[0] + d_val
+            fin = blob.index(b"\x00", base)
+            noms.add(blob[base:fin].decode("utf-8", "replace"))
+    return noms
+
+
+def dependances_absentes(chemin: str) -> "set[str]":
+    """Shared libraries the .so files need and the .aar does not contain."""
+    manquantes = set()
+    with zipfile.ZipFile(chemin) as z:
+        sos = [n for n in z.namelist() if n.endswith(".so")]
+        presentes = {n.split("/")[-1] for n in sos}
+        for n in sos:
+            for nom in dt_needed(z.read(n)):
+                if nom not in presentes and nom not in FOURNIES_PAR_ANDROID:
+                    manquantes.add(nom)
+    return manquantes
 
 
 def tier_devine(chemin: str) -> str:
@@ -130,6 +200,27 @@ def main() -> int:
             print("  Either it was restored from a checkpoint instead of built, or the")
             print("  source cache was not invalidated when the pin moved.")
             return 1
+
+    # WARNING: does every .so the artifact needs actually travel with it?
+    #
+    # A build can link against libc++_shared.so and not package it, and nothing
+    # static notices: the filters are all there, the pin matches, the licence is
+    # bundled. The app then dies on the very first load, before any of it runs:
+    #
+    #   UnsatisfiedLinkError: dlopen failed: library "libc++_shared.so" not found
+    #
+    # Measured 2026-09-24 on the freshly built `min` and `https` tiers, which named
+    # it and did not carry it. The .so lists what it needs; this reads that list
+    # back against what the .aar holds.
+    manquantes = sorted(dependances_absentes(a.aar))
+    if manquantes:
+        print("AAR   : " + a.aar)
+        print("")
+        print("MISSING shared libraries the artifact itself asks for: "
+              + ", ".join(manquantes))
+        print("  Linked against, never packaged. Every app using this .aar dies on")
+        print("  the first load with UnsatisfiedLinkError, whatever else is correct.")
+        return 1
 
     attendus = PROMESSES[tier]
     print("AAR   : " + a.aar)

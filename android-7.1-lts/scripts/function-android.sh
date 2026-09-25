@@ -70,11 +70,24 @@ build_application_mk() {
     local LTS_BUILD_FLAG="-DFFMPEG_KIT_LTS "
   fi
 
-  if [[ ${ENABLED_LIBRARIES[$LIBRARY_X265]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_TESSERACT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_OPENH264]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SNAPPY]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_RUBBERBAND]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_ZIMG]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_SRT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_CHROMAPRINT]} -eq 1 ]] || [[ ${ENABLED_LIBRARIES[$LIBRARY_LIBILBC]} -eq 1 ]] || [[ -n ${CUSTOM_LIBRARY_USES_CPP} ]]; then
-    local APP_STL="c++_shared"
-  else
-    local APP_STL="none"
-  fi
+  # ⚠️ Unconditional, and it has to stay that way: get_ldlibs() links ffmpeg against
+  # -lc++_shared for every tier. If the STL is always linked, it must always be
+  # packaged, or the .so names a library the .aar does not contain and the app dies
+  # on the first load:
+  #
+  #   UnsatisfiedLinkError: dlopen failed: library "libc++_shared.so" not found:
+  #     needed by .../lib/arm64-v8a/libavfilter.so
+  #
+  # This used to be a hand-kept list of libraries known to be C++ (x265, tesseract,
+  # openh264, snappy, rubberband, zimg, srt, chromaprint, libilbc, and whisper on
+  # 8.1). That list was right while the link line was conditional too. It stopped
+  # being right when linking became unconditional -- the very change made after the
+  # `audio` tier crashed for exactly this reason -- and nobody updated the second
+  # half. The `min` and `https` tiers enable none of them, so from that day on they
+  # shipped .so files that could not load.
+  #
+  # Two decisions about one subject. They are one decision now.
+  local APP_STL="c++_shared"
 
   local BUILD_DATE="-DFFMPEG_KIT_BUILD_DATE=$(date +%Y%m%d 2>>"${BASEDIR}"/build.log)"
 
