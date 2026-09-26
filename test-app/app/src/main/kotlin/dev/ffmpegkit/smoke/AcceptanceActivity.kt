@@ -412,8 +412,17 @@ class AcceptanceActivity : Activity() {
     }
 
     private fun ecrire(out: File) {
+        // Ecriture en deux temps et ligne terminale, comme SmokeActivity.
+        //
+        // Un pilote qui attend la presence du fichier peut le recuperer pendant qu'il
+        // s'ecrit -- mesure du 2026-09-25 sur l'inventaire : deux paliers rendus
+        // « ok, 1 ligne » pour un en-tete de 16 octets. Present n'est pas complet.
+        lignes.append("##### FIN\n")
         val f = File(out, "acceptation.txt")
-        f.writeText(lignes.toString())
+        val provisoire = File(out, "acceptation.partiel")
+        f.delete()
+        provisoire.writeText(lignes.toString())
+        provisoire.renameTo(f)
         val ok = lignes.lineSequence().count { it.contains("|OK|") }
         val absent = lignes.lineSequence().count { it.contains("|ABSENT|") }
         val echec = lignes.lineSequence().count { it.contains("|ECHEC|") }

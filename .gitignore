@@ -71,3 +71,11 @@ google-services.json
 
 # Internal project notes (Gumroad IDs, pricing, secrets names) - not for a public repo
 CLAUDE.md
+
+# Les AAR que le workflow de publication telecharge depuis la release, puis publie
+# tels quels. Deux versions 6.0.3 y ont ete SUIVIES par git jusqu'au 2026-09-26 :
+# perimees, porteuses du defaut RELRO, et l'une sans libc++_shared.so. Seul le refus
+# d'ecrasement de `gh release download` a empeche 6.0.4 de partir avec ces octets-la,
+# definitivement -- Maven Central est immuable. Un binaire dans l'arbre est une
+# reponse prete a servir a une question que personne ne pose plus.
+/android-*-lts/android/ffmpeg-kit-android-lib/prebuilt-aars/

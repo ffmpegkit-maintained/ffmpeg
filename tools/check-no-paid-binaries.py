@@ -26,9 +26,17 @@ import subprocess
 import sys
 
 # Free-tier artifacts, inputs to publish-maven-free.yml's alias publications.
+# ⚠️ Les deux AAR de prebuilt-aars/ sont sortis de cette liste le 2026-09-26.
+#
+# Ils y figuraient comme « connus, donc acceptables ». Mesure faite ce jour-la : c'etaient
+# les octets de 6.0.3, tous deux refuses par check-elf-16kb.py (RELRO debordant le dernier
+# LOAD), et ffmpeg-kit-https.aar ne contenait meme pas libc++_shared.so. Or build.gradle
+# publie ce chemin TEL QUEL. Sans l'ecrasement du telechargement, 6.0.4 serait parti avec
+# eux -- definitivement, Maven Central etant immuable.
+#
+# Une liste d'exceptions dit « on sait que c'est la ». Elle ne dit pas « on sait ce que
+# c'est ». Le repertoire est maintenant gitignore et rempli au moment de publier.
 AUTORISES = {
-    "android-6.0-lts/android/ffmpeg-kit-android-lib/prebuilt-aars/ffmpeg-kit-https.aar",
-    "android-6.0-lts/android/ffmpeg-kit-android-lib/prebuilt-aars/ffmpeg-kit-https-gpl.aar",
     "android-6.0-lts/releases/ffmpeg-kit-6.0-lts-arm64-v8a.aar",
 }
 
