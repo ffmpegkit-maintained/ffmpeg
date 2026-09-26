@@ -2260,7 +2260,11 @@ source_fingerprint() {
   # Un changement de compilateur change le binaire. L'empreinte doit le dire.
   local NDK_ID="nondk"
   if [ -n "${ANDROID_NDK_ROOT}" ] && [ -r "${ANDROID_NDK_ROOT}/source.properties" ]; then
-    NDK_ID=$(grep -i '^Pkg.Revision' "${ANDROID_NDK_ROOT}/source.properties"       | tr -d ' ' | cut -d= -f2)
+    # sed plutot que grep|tr : pas une seule sequence d'echappement a faire
+    # survivre a un script de patch. La version precedente portait un CR brut,
+    # invisible, dans un script shell -- et check-eol.py l'a vu dans le commit.
+    NDK_ID=$(sed -n 's/^Pkg\.Revision[[:space:]]*=[[:space:]]*//p' "${ANDROID_NDK_ROOT}/source.properties" | head -1)
+    NDK_ID=${NDK_ID%%[[:space:]]*}
   fi
   [ -n "${NDK_ID}" ] || NDK_ID="nondk"
 

@@ -35,10 +35,33 @@ def suivis():
     return [n.decode() for n in out.split(b"\0") if n]
 
 
+def contenu_suivi(chemin: str) -> bytes:
+    """The bytes git RECORDS for this path, not the bytes on disk.
+
+    ⚠️ This is the whole point, and the previous version got it wrong.
+
+    The docstring above already said "this reads back what the repository actually
+    holds", but the code opened the file in the working tree. On Linux CI the two are
+    the same. On a Windows checkout with core.autocrlf=true the working tree is CRLF
+    **by design**, so the guard reported 415 offending scripts on a repository whose
+    commits are clean -- measured 2026-09-25.
+
+    A guard that reports a defect where there is none is a guard someone switches off,
+    and then it is not there on the day the defect is real. Reading the recorded blob
+    gives the same verdict on every platform.
+    """
+    return subprocess.run(["git", "show", ":" + chemin],
+                          capture_output=True, check=True).stdout
+
+
 def crs(chemin: str) -> int:
-    """How many lines end with CR. Binary read, deliberately."""
-    with io.open(chemin, "rb") as f:
-        return f.read().count(b"\r\n")
+    """How many lines end with CR. Binary read of the recorded blob, deliberately."""
+    try:
+        return contenu_suivi(chemin).count(b"\r\n")
+    except subprocess.CalledProcessError:
+        # Pas dans l'index (fichier nomme a la main, ou non suivi) : on lit le disque.
+        with io.open(chemin, "rb") as f:
+            return f.read().count(b"\r\n")
 
 
 def main() -> int:
