@@ -107,6 +107,15 @@ jobs:
       # Chaque rustine appliquee s'inscrit desormais dans `prebuilt/.security-patches`.
       # Ceci compare ce manifeste au jeu de rustines du depot et refuse de continuer
       # s'il en manque une, quelle qu'en soit la raison.
+      # ⚠️ La chaine d'outils en usage est-elle celle que la ligne declare ?
+      #
+      # C'est deja arrive : 8.1.3 a ete publie en annoncant le r27c alors que l'URL de
+      # telechargement du workflow pointait encore sur le r26c. Deux endroits nomment le
+      # NDK et rien ne les comparait. Maven Central etant immuable, une version publiee
+      # sur la foi d'une chaine d'outils qui n'est pas la sienne ne se corrige pas.
+      - name: The NDK in use is the one this line declares
+        run: python3 ../tools/check-ndk.py
+
       - name: The security patches are in this build
         run: python3 ../tools/check-security-patches.py
 

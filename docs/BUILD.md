@@ -47,10 +47,20 @@ mv cmdline-tools latest
 export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
 
 yes | sdkmanager --licenses
-sdkmanager "platform-tools" "platforms;android-35" "ndk;26.2.11394342"
+sdkmanager "platform-tools" "platforms;android-35" "ndk;27.2.12479018"
 
-export ANDROID_NDK_ROOT="$ANDROID_SDK_ROOT/ndk/26.2.11394342"
+export ANDROID_NDK_ROOT="$ANDROID_SDK_ROOT/ndk/27.2.12479018"
 ```
+
+> **r27c or newer, on all three lines.** The 6.0 and 7.1 lines were on r26c until
+> 2026-09-26, and r26c's `lld` produces libraries that **cannot be loaded at all**:
+> `PT_GNU_RELRO`, rounded up to 16 KB, runs past the last `PT_LOAD`, so the loader's
+> `mprotect` covers unmapped memory and answers `ENOMEM` — reported as
+> `dlopen failed: can't enable GNU RELRO protection … Out of memory`. It only affects
+> **small** libraries, so it took `libswresample.so` and `libavdevice.so` and spared the
+> large ones. r26c also ships `libc++_shared.so` aligned on 4 KB, and that one is copied
+> from the NDK, so no linker flag of ours can fix it. See the known-issue entry in
+> [PATCH-NOTES.md](PATCH-NOTES.md).
 
 Add these `export` lines to your `~/.bashrc` so they persist across shells.
 
@@ -106,18 +116,34 @@ Run `./android.sh --help` for the full list of options.
 
 Successful builds produce per-ABI shared libraries under `prebuilt/android-<arch>/ffmpeg/lib/` and the Android `.aar` package under `prebuilt/bundle-android-aar/`.
 
-## 8. Verify 16 KB page size alignment
+## 8. Verify the libraries can actually be loaded
 
-The build already links with `-Wl,-z,max-page-size=16384` by default (`scripts/function-android.sh` and the generated `Application.mk`), so a normal build should come out aligned without any extra steps. This is a verification step, not something you need to enable — CI runs the same check and fails the build if it's ever wrong:
+The build links with `-Wl,-z,max-page-size=16384` by default (`scripts/function-android.sh`
+and the generated `Application.mk`), so everything **it** links comes out aligned without
+extra steps. That is not the whole question, and the check that only asked it was green on
+artifacts that could not be loaded at all.
+
+Run this on the `.aar`, which is what a consumer installs:
 
 ```bash
-for so in $(find prebuilt -name "*.so"); do
-  echo "$so:"
-  objdump -p "$so" | grep -A1 LOAD | grep align
-done
+python3 ../tools/check-elf-16kb.py prebuilt/bundle-android-aar/ffmpeg-kit/ffmpeg-kit.aar
 ```
 
-Segment alignment should report `2**14` (16384) or higher. See the [Android 16 KB page size guide](https://developer.android.com/guide/practices/page-sizes) for background on this requirement.
+It reads every `.so` in the archive and checks two things:
+
+- **`p_align` ≥ 16384 on every `PT_LOAD`.** Not only the libraries we link: `libc++_shared.so`
+  is a prebuilt copied out of the NDK and no flag of ours reaches it (r26c ships it at 4 KB,
+  r27c at 16 KB).
+- **`PT_GNU_RELRO`, rounded up to the page size, stays inside the last `PT_LOAD`.** When it
+  does not, `dlopen` fails outright with `can't enable GNU RELRO protection … Out of memory`.
+
+CI runs the same command in all 33 build workflows and fails the build on either count. The
+previous version of this step walked `find prebuilt -name "*.so"` with `objdump`, which
+could not see `libc++_shared.so` — Gradle adds it when it assembles the AAR — and never
+looked at RELRO.
+
+See the [Android 16 KB page size guide](https://developer.android.com/guide/practices/page-sizes)
+for background; Google Play stops accepting updates without 16 KB support on 2027-02-01.
 
 ## Troubleshooting
 

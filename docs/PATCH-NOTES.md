@@ -171,6 +171,61 @@ A check that cannot see the defect returns a verdict of success for that defect.
 evidence for the second fix is the code and the reporter's tombstone, which names
 `avfilter_inout_free` directly under `init_complex_filtergraph`; not a green line here.
 
+## ⚠️ Known issue: seven of nine tiers on 6.0 and 7.1 cannot be loaded at all
+
+Not a release entry — a correction to what this document promised. Found 2026-09-25 while
+preparing 7.1.7, by reading the ELF program headers of the **published** artifacts.
+
+On the 6.0 and 7.1 lines, `dlopen` fails before a single function is called:
+
+```
+dlopen failed: can't enable GNU RELRO protection for
+  ".../jni/x86_64/libavdevice.so": Out of memory
+```
+
+It is not a memory shortage. `PT_GNU_RELRO`, rounded up to the 16 KB page size, extends
+past the end of the last `PT_LOAD`; Android's loader `mprotect`s that range, part of it is
+unmapped, and `mprotect` answers `ENOMEM`, which bionic reports verbatim.
+
+| tier | 6.0.3 | 7.1.6 | 8.1.9 |
+|---|---|---|---|
+| `full`, `full-gpl` | loads | loads | loads |
+| `free`, `min`, `min-gpl`, `https`, `https-gpl`, `video` | **fails** | **fails** | loads |
+| `audio` | **fails** | **fails** | loads |
+
+**Cause.** NDK **r26c**, used by those two lines. Its `lld` rounds RELRO up to
+`max-page-size=16384` without padding the final `LOAD` to match; r27c does. It only bites
+**small** libraries, which is why it took `libswresample.so` and `libavdevice.so`, spared
+the large ones, and looked intermittent. The 8.1 line was already on r27c and is clean on
+all nine tiers.
+
+The same NDK explains a second defect on those lines: `libc++_shared.so` at `p_align`
+`0x1000` instead of `0x4000`. It is a prebuilt copied out of the NDK, so no linker flag
+reaches it, and Google aligned theirs on 16 KB only from r27. Google Play stops accepting
+updates without 16 KB page support on **2027-02-01**.
+
+A third, older defect on the same two lines: `free`, `https` and `min` ship **no**
+`libc++_shared.so` at all, while `libffmpegkit.so` links against it unconditionally — the
+defect fixed on 8.1 in September.
+
+**Fixed in the build configuration**: `ndkVersion` `26.2.11394342` → `27.2.12479018` on
+6.0 and 7.1, and `r26c` → `r27c` in the 22 workflows of those lines. The entry recording
+the released fix will be added here once the artifacts are live and re-verified, per the
+rule at the top of this file.
+
+**The check that should have caught it read the wrong thing.** The old inline step walked
+`find prebuilt -name "*.so"`, so it never saw `libc++_shared.so` — Gradle adds it when it
+assembles the AAR — and it looked only at `p_align`, never at RELRO. It was green
+throughout. [`tools/check-elf-16kb.py`](../tools/check-elf-16kb.py) reads the **AAR**,
+checks both properties, and fails when it finds no library at all: a guard that reads
+nothing must not return success.
+
+**And the fingerprint had to learn about the toolchain.** Neither the upstream tag nor the
+patch set moves with an NDK bump, so the stamp written by the previous build would have
+matched, the tree restored from the checkpoint would have been kept, and the build would
+have republished the same defective binaries — green, and byte-identical. `source_fingerprint`
+now carries `Pkg.Revision` from `${ANDROID_NDK_ROOT}/source.properties`.
+
 ## Full / Full GPL Maven aliases (6.0.3 / 7.1.6 / 8.1.7) — 2026-07-12
 
 Completes the 8-name Arthenica tier matrix on all three LTS lines: `ffmpeg-kit-full` and
