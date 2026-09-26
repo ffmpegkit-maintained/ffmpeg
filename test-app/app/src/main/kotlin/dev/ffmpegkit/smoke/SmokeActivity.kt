@@ -61,6 +61,10 @@ class SmokeActivity : Activity() {
         dire("ffmpeg    " + runCatching { FFmpegKitConfig.getFFmpegVersion() }.getOrElse { "?" })
         dire("build     " + runCatching { FFmpegKitConfig.getBuildDate() }.getOrElse { "?" })
 
+        // L'inventaire d'abord : les epreuves qui suivent peuvent tuer le processus,
+        // et sur les versions non corrigees elles le font. Voir ecrireInventaire().
+        ecrireInventaire(out)
+
         // 0. La question faisant autorite : ffmpeg est-il d'accord pour dire que le
         // filtre existe ? Une chaine dans un .so n'est pas une inscription dans la
         // table des filtres -- `tools/check-filters.py` compte des octets et peut donc
@@ -173,37 +177,66 @@ class SmokeActivity : Activity() {
         dire("4 SONDE   OK $tours tours, le processus repond encore")
 
         val tout = ok1 && ok2 && ok3 && tours == 60
-        // 5. L'inventaire complet, pour comparer AVANT et APRES.
-        //
-        // Un pin qui bouge (n8.1.2 -> n8.1.3) est une montee amont : elle peut retirer
-        // un codec, un muxer, un protocole, sans que rien ne le signale. Le harnais
-        // ci-dessus verifie six filtres ; il ne dit RIEN des 477 autres.
-        //
-        // On ecrit donc tout ce que le binaire declare savoir faire, et on compare le
-        // fichier produit par l'ancienne version et par la nouvelle. Ce qui etait la
-        // et n'y est plus est une regression, quel que soit l'endroit.
-        val inventaire = File(out, "inventaire.txt")
+        dire("--- BILAN : " + (if (tout) "TOUT OK" else "AU MOINS UN ECHEC") + " ---")
+    }
+
+    /**
+     * L'inventaire complet de ce que le binaire declare savoir faire.
+     *
+     * Un pin qui bouge (n8.1.2 -> n8.1.3) est une montee amont : elle peut retirer un
+     * codec, un muxer, un protocole, sans que rien ne le signale. Les epreuves
+     * ci-dessus verifient six filtres ; elles ne disent RIEN des 477 autres. On ecrit
+     * donc tout, et on compare le fichier de l'ancienne version a celui de la nouvelle.
+     *
+     * ⚠️ Appele AVANT les epreuves, et c'est la raison d'etre de cette fonction.
+     *
+     * Il etait ecrit en dernier. Mesure le 2026-09-25 : `ffmpeg-kit-full 7.1.6`, la
+     * version PUBLIEE, segfaute a l'epreuve du filtergraph fautif -- c'est precisement
+     * le second defaut signale par le client, et il n'est pas encore corrige sur cette
+     * ligne. Le processus mourait donc avant la ligne qui ecrit l'inventaire, et le
+     * cote « avant » de la comparaison etait inobtenable : impossible de prouver
+     * qu'aucune capacite n'a ete perdue, faute de reference.
+     *
+     * La donnee de reference doit survivre au defaut qu'on est en train de corriger.
+     * Un banc qui n'obtient sa mesure que des versions saines ne mesure rien d'utile.
+     */
+    private fun ecrireInventaire(out: File) {
+        val nl = System.lineSeparator()
         // ⚠️ La version en TETE du fichier, pas seulement dans le journal.
         // Lire la version dans logcat expose a une course : le tampon peut avoir
         // tourne, ou l'activite avoir demarre avant que `logcat -c` prenne effet, et
         // la garde rend alors "aucune version" pour une mesure parfaitement valide.
         // Ecrite dans le fichier, elle voyage avec la donnee qu'elle qualifie.
-        inventaire.writeText(
-            "##### version " +
-                runCatching { FFmpegKitConfig.getFFmpegVersion() }.getOrElse { "?" } +
-                System.lineSeparator(),
-        )
-        inventaire.appendText(
-            listOf("-filters", "-encoders", "-decoders", "-muxers", "-demuxers",
-                   "-protocols", "-formats", "-bsfs", "-pix_fmts")
-                .joinToString(System.lineSeparator()) { quoi ->
-                    val r = FFmpegKit.execute("-hide_banner $quoi")
-                    "===== " + quoi + System.lineSeparator() + (r.output ?: "")
-                },
-        )
-        dire("5 INVENTAIRE ecrit " + inventaire.length() + " octets -> " + inventaire.absolutePath)
+        val texte = StringBuilder()
+        texte.append("##### version ")
+            .append(runCatching { FFmpegKitConfig.getFFmpegVersion() }.getOrElse { "?" })
+            .append(nl)
+        for (quoi in listOf("-filters", "-encoders", "-decoders", "-muxers", "-demuxers",
+                            "-protocols", "-formats", "-bsfs", "-pix_fmts")) {
+            val r = FFmpegKit.execute("-hide_banner $quoi")
+            texte.append("===== ").append(quoi).append(nl).append(r.output ?: "").append(nl)
+        }
+        // La derniere ligne dit que le fichier est complet. Un lecteur peut donc
+        // distinguer « tronque » de « ce palier ne sait rien faire ».
+        texte.append("##### FIN").append(nl)
 
-        dire("--- BILAN : " + (if (tout) "TOUT OK" else "AU MOINS UN ECHEC") + " ---")
+        // ⚠️ Ecriture en deux temps, et c'est la raison de la forme.
+        //
+        // L'ancienne version faisait writeText(entete) puis appendText(les 9 listes) :
+        // le fichier existait donc, non vide, des la premiere milliseconde. Un pilote
+        // qui attend `test -s` le voyait apparaitre a 16 octets et le recuperait --
+        // « ok, 1 ligne » pour un inventaire vide. Mesure le 2026-09-25 : deux paliers
+        // rendus ainsi, et le verdict etait « reussi ».
+        //
+        // Le nom final n'apparait plus qu'une fois tout ecrit. Un observateur ne peut
+        // plus voir un etat intermediaire et le prendre pour le resultat.
+        val provisoire = File(out, "inventaire.partiel")
+        val inventaire = File(out, "inventaire.txt")
+        inventaire.delete()
+        provisoire.writeText(texte.toString())
+        val bouge = provisoire.renameTo(inventaire)
+        dire("0 INVENTAIRE " + (if (bouge) "ecrit " else "RENOMMAGE ECHOUE ") +
+            inventaire.length() + " octets -> " + inventaire.absolutePath)
     }
 
     private fun dire(l: String) = Log.i("SMOKE", l)

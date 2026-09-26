@@ -61,6 +61,10 @@ google-services.json
 # copied in. app/libs/ stays ignored as a second line, for hand-run experiments.
 /test-app/app/libs/
 /test-app/**/build/
+# Un repertoire de sortie par palier teste : sur Windows, un processus Java
+# resident garde app-debug.apk verrouille et Gradle echoue a effacer sa propre
+# sortie. Voir test-app/app/build.gradle.kts, -PbuildTag.
+/test-app/**/build-*/
 /test-app/.gradle/
 /test-app/.kotlin/
 /test-app/local.properties

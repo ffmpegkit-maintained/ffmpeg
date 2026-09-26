@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- L'epreuve TLS telecharge par https ; les autres n'en ont pas besoin. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application android:label="ffmpegkit smoke" android:allowBackup="false">
         <activity android:name=".SmokeActivity" android:exported="true">
             <intent-filter>
@@ -8,5 +10,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".AcceptanceActivity" android:exported="true" />
+        <activity android:name=".ExtraActivity" android:exported="true" />
+        <activity android:name=".PerfActivity" android:exported="true" />
     </application>
 </manifest>
