@@ -40,22 +40,26 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
-    // ⚠️ Les .so sont EXTRAITS, pas mappes depuis l'APK.
+    // ⚠️ PAS de useLegacyPackaging ici, et c'est deliberé.
     //
-    // Mesure du 2026-09-25 sur l'emulateur x86_64 (API 34, 6 Go) : charger les dix .so
-    // directement depuis l'APK echoue par intermittence, selon le palier, avec
+    // J'ai commence par l'ajouter. L'emulateur refusait de charger certains paliers --
     //
     //   dlopen failed: can't enable GNU RELRO protection for
     //   ".../base.apk!/lib/x86_64/libavdevice.so": Out of memory
     //
-    // Un palier passait, le suivant non, le meme palier changeait d'avis d'un
-    // passage a l'autre. Un banc dont le verdict depend de qui gagne une course ne
-    // mesure rien -- et ici la course n'etait meme pas dans le produit, elle etait
-    // dans la facon dont le harnais empaquete l'APK.
+    // -- un palier passait, le suivant non, et j'ai mis cela sur le compte de
+    // l'empaquetage : les .so mappes depuis l'APK plutot qu'extraits sur disque.
+    // L'extraction faisait effectivement disparaitre le message.
     //
-    // L'extraction sur disque supprime cette variable. Ce que le banc doit juger
-    // reste juge : les memes .so livres par l'AAR, ouverts par le meme dlopen.
-    packaging { jniLibs { useLegacyPackaging = true } }
+    // C'etait faux. La cause etait dans le produit : PT_GNU_RELRO depassait le dernier
+    // PT_LOAD sur les petites bibliotheques, calcule ainsi par le lld du NDK r26c, et
+    // « Out of memory » est le mot que mprotect emploie pour « plage invalide ».
+    // 7 paliers sur 9 des lignes 6.0 et 7.1 ne se chargeaient pas, sur aucun appareil.
+    //
+    // Donc l'extraction n'etait pas une neutralisation de bruit : c'etait un
+    // contournement qui MASQUAIT le defaut qu'on cherchait. Le harnais reste sur
+    // l'empaquetage par defaut -- celui de toute application qui nous consomme -- pour
+    // pouvoir revoir ce defaut-la si jamais il revient.
 }
 
 // L'AAR a tester arrive par sa VALEUR, jamais par une copie dans l'arbre.
