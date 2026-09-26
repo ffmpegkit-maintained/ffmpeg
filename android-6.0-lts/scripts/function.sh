@@ -2248,7 +2248,23 @@ source_fingerprint() {
     PATCH_HASH=$(cat "${PATCH_DIR}"/*.patch | sha256sum | cut -c1-16)
   fi
 
-  echo "${SOURCE_ID}+${PATCH_HASH}"
+  # ⚠️ La chaine d'outils fait partie de l'etat de l'arbre.
+  #
+  # Mesure du 2026-09-25 : le passage de 6.0 et 7.1 au NDK r27c corrige un defaut qui
+  # empechait 7 paliers sur 9 de se charger (PT_GNU_RELRO debordant le dernier LOAD,
+  # calcule par le lld du r26c). Mais ni le tag amont ni le jeu de rustines ne bougent
+  # pour autant : l'empreinte aurait correspondu, l'arbre restaure du checkpoint aurait
+  # ete garde, `library_is_installed` aurait vu un prebuilt/ existant, et le build
+  # aurait republie les MEMES binaires defectueux -- vert, et identique.
+  #
+  # Un changement de compilateur change le binaire. L'empreinte doit le dire.
+  local NDK_ID="nondk"
+  if [ -n "${ANDROID_NDK_ROOT}" ] && [ -r "${ANDROID_NDK_ROOT}/source.properties" ]; then
+    NDK_ID=$(grep -i '^Pkg.Revision' "${ANDROID_NDK_ROOT}/source.properties"       | tr -d ' ' | cut -d= -f2)
+  fi
+  [ -n "${NDK_ID}" ] || NDK_ID="nondk"
+
+  echo "${SOURCE_ID}+${PATCH_HASH}+ndk${NDK_ID}"
 }
 
 #
